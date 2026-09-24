@@ -41,6 +41,7 @@ type WalletRepository interface {
 
 type WagerTransactionRepository interface {
 	Save(ctx context.Context, wagerTransaction *domain.WagerTransaction) error
+	FindByID(ctx context.Context, transactionID domain.TransactionID) (*domain.WagerTransaction, error)
 }
 
 type WalletLedgerRepository interface {

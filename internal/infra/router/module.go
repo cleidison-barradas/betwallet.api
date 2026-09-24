@@ -14,6 +14,11 @@ var Module = fx.Module("router",
 			fx.As(new(Route)),
 			fx.ResultTags(`group:"routes"`),
 		),
+		fx.Annotate(
+			NewWagerTransactionHandler,
+			fx.As(new(Route)),
+			fx.ResultTags(`group:"routes"`),
+		),
 	),
 	fx.Provide(New),
 )

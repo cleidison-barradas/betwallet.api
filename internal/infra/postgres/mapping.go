@@ -6,3 +6,10 @@ func NullIfEmpty(s string) *string {
 	}
 	return &s
 }
+
+func NullableStr[T ~string](s *T) *string {
+	if s == nil {
+		return nil
+	}
+	return NullIfEmpty(string(*s))
+}
