@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cleidison-barradas/betwallet.api/internal/domain"
-	"github.com/google/uuid"
 )
 
 type OpenWalletCommand struct {
@@ -48,8 +47,7 @@ func NewOpenWallet(
 }
 
 func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*OpenWalletResult, error) {
-
-	walletID := domain.WalletID(uc.ids.NewID())
+	walletID := domain.WalletID(uc.ids.NewID().String())
 	playerID := domain.PlayerID(cmd.PlayerID)
 
 	wallet, err := domain.NewWallet(walletID, playerID, cmd.InitialBalance)
@@ -58,7 +56,7 @@ func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*Open
 	}
 
 	err = uc.uow.Execute(ctx, func(ctx context.Context) error {
-		if err != nil {
+		if err := uc.wallets.Create(ctx, wallet); err != nil {
 			return err
 		}
 
@@ -74,7 +72,7 @@ func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*Open
 	}
 
 	return &OpenWalletResult{
-		WalletID: uuid.UUID(walletID).String(),
+		WalletID: string(walletID),
 		PlayerID: string(playerID),
 		Balance:  wallet.Balance(),
 		Version:  wallet.Version(),
@@ -82,14 +80,14 @@ func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*Open
 }
 
 func (uc *OpenWallet) recordOpeningCredit(ctx context.Context, wallet *domain.Wallet) error {
-	transactionID := domain.TransactionID(uc.ids.NewID())
+	transactionID := domain.TransactionID(uc.ids.NewID().String())
 
 	openingTransaction, err := domain.NewOpeningTransaction(transactionID, wallet.ID(), wallet.PlayerID(), wallet.Balance())
 	if err != nil {
 		return err
 	}
 
-	if err := openingTransaction.MarkProcessed(transactionID); err != nil {
+	if err := openingTransaction.MarkProcessed(""); err != nil {
 		return err
 	}
 
@@ -102,7 +100,7 @@ func (uc *OpenWallet) recordOpeningCredit(ctx context.Context, wallet *domain.Wa
 		return err
 	}
 
-	entryID := domain.LedgerEntryID(uc.ids.NewID())
+	entryID := domain.LedgerEntryID(uc.ids.NewID().String())
 	entry, err := domain.NewWalletLedgerEntry(
 		entryID,
 		wallet.ID(),
@@ -127,7 +125,7 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 	correlationID := uc.ids.NewID().String()
 
 	processedData := WagerTransactionProcessedData{
-		TransactionID: uuid.UUID(transactionID).String(),
+		TransactionID: string(transactionID),
 		Kind:          string(domain.KindOpening),
 		WalletID:      wallet.ToStringID(),
 	}
@@ -140,7 +138,7 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 		return err
 	}
 
-	processedEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID()), wallet.ToStringID(), "WagerTransactionProcessed", processedPayload)
+	processedEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ToStringID(), "WagerTransactionProcessed", processedPayload)
 	if err != nil {
 		return err
 	}
@@ -151,7 +149,7 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 
 	balanceChangedData := WalletBalanceChangedData{
 		WalletID:      wallet.ToStringID(),
-		TransactionID: uuid.UUID(transactionID).String(),
+		TransactionID: string(transactionID),
 		Direction:     string(domain.DirectionCredit),
 		BalanceBefore: entry.BalanceBefore().String(),
 		BalanceAfter:  entry.BalanceAfter().String(),
@@ -166,7 +164,7 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 		return err
 	}
 
-	balanceEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID()), wallet.ToStringID(), "WalletBalanceChanged", balancePayload)
+	balanceEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ToStringID(), "WalletBalanceChanged", balancePayload)
 	if err != nil {
 		return err
 	}

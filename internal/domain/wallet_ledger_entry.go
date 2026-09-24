@@ -4,14 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var ErrInvalidWalletLedgerEntry = errors.New("wallet_ledger_entry: invalid wallet ledger entry")
 
 type Direction string
-type LedgerEntryID uuid.UUID
+type LedgerEntryID string
 
 const (
 	DirectionCredit Direction = "CREDIT"

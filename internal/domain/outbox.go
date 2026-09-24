@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var ErrInvalidOutboxEntry = errors.New("outbox: invalid state entry")
 
-type OutboxEventID uuid.UUID
+type OutboxEventID string
 
 type OutboxEntry struct {
 	eventID       OutboxEventID
@@ -76,7 +74,7 @@ func (e *OutboxEntry) OccurredAt() time.Time    { return e.occurredAt }
 func (e *OutboxEntry) Attempts() int            { return e.attempts }
 func (e *OutboxEntry) NextAttemptAt() time.Time { return e.nextAttemptAt }
 func (e *OutboxEntry) IsPublished() bool        { return e.publishedAt != nil }
-func (e *OutboxEntry) ToStringID() string       { return uuid.UUID(e.eventID).String() }
+func (e *OutboxEntry) PublishedAt() *time.Time  { return e.publishedAt }
 
 func (e *OutboxEntry) IsDue(now time.Time) bool {
 	return !e.IsPublished() && !now.Before(e.nextAttemptAt)

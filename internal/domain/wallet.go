@@ -3,8 +3,6 @@ package domain
 import (
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -13,7 +11,7 @@ var (
 )
 
 type PlayerID string
-type WalletID uuid.UUID
+type WalletID string
 
 type Wallet struct {
 	id        WalletID
@@ -78,7 +76,7 @@ func (w *Wallet) Currency() Currency   { return w.balance.Currency() }
 func (w *Wallet) Version() int64       { return w.version }
 func (w *Wallet) CreatedAt() time.Time { return w.createdAt }
 func (w *Wallet) UpdatedAt() time.Time { return w.updatedAt }
-func (w *Wallet) ToStringID() string   { return uuid.UUID(w.id).String() }
+func (w *Wallet) ToStringID() string   { return string(w.id) }
 
 func (w *Wallet) Debit(amount Money) (Movement, error) {
 	if !amount.IsPositive() {

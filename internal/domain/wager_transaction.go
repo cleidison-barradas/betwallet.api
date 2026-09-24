@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -56,7 +54,7 @@ func (s WagerStatus) isTerminal() bool {
 	}
 }
 
-type TransactionID uuid.UUID
+type TransactionID string
 type ProviderID string
 type RoundID string
 type GameID string
@@ -163,10 +161,10 @@ func validateMoneyForKind(kind WagerKind, money Money) error {
 	return nil
 }
 
-func NewOpeningTransaction(transactionID TransactionID, walletID WalletID, player PlayerID, money Money) (*WagerTransaction, error) {
+func NewOpeningTransaction(transactionID TransactionID, walletID WalletID, playerID PlayerID, money Money) (*WagerTransaction, error) {
 
-	if player == "" {
-		return nil, fmt.Errorf("%w: player id is required", ErrWagerInvalidTransactionState)
+	if transactionID == "" || walletID == "" || playerID == "" {
+		return nil, fmt.Errorf(" %w: transactionID, walletID and playerID are required", ErrWagerInvalidTransactionState)
 	}
 
 	if money.IsNegative() {
@@ -180,7 +178,7 @@ func NewOpeningTransaction(transactionID TransactionID, walletID WalletID, playe
 		kind:      KindOpening,
 		status:    StatusPending,
 		walletID:  walletID,
-		playerID:  player,
+		playerID:  playerID,
 		money:     money,
 		createdAt: now,
 		updatedAt: now,
@@ -242,10 +240,11 @@ func (t *WagerTransaction) GameID() GameID                         { return t.ga
 func (t *WagerTransaction) ReferenceExternalTransactionID() string { return t.referenceExternalTxID }
 func (t *WagerTransaction) FailureCode() string                    { return t.failureCode }
 func (t *WagerTransaction) UpdatedAt() time.Time                   { return t.updatedAt }
-func (t *WagerTransaction) ToStringID() string                     { return uuid.UUID(t.id).String() }
+func (t *WagerTransaction) CreatedAt() time.Time                   { return t.createdAt }
+func (t *WagerTransaction) ResolvedReferenceID() TransactionID     { return t.resolvedReferenceID }
 
 func (t *WagerTransaction) transitionGuard() error {
-	if t.status != StatusPending {
+	if t.status.isTerminal() {
 		return fmt.Errorf("%w: The transaction is already in a terminal state.", ErrWagerInvalidTransactionState)
 	}
 	return nil

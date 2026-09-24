@@ -10,7 +10,7 @@ import (
 
 func TestNewWallet(t *testing.T) {
 	t.Run("Create wallet with version 1 sucessfully", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		balance, _ := Parse("100.00", BRL)
 
 		w, err := NewWallet(walletID, "player-1", balance)
@@ -33,7 +33,7 @@ func TestNewWallet(t *testing.T) {
 	})
 
 	t.Run("Accept balance 0", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		zero, _ := Zero(BRL)
 		w, err := NewWallet(walletID, "player-1", zero)
@@ -48,7 +48,7 @@ func TestNewWallet(t *testing.T) {
 	})
 
 	t.Run("Reject inital balance negative", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		balance, _ := Parse("-10.00", BRL)
 		_, err := NewWallet(walletID, "player-1", balance)
@@ -59,7 +59,7 @@ func TestNewWallet(t *testing.T) {
 	})
 
 	t.Run("Reject if playerID is empty", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		balance, _ := Parse("10.00", BRL)
 		_, err := NewWallet(walletID, "", balance)
@@ -75,7 +75,7 @@ func TestRehydrateWallet(t *testing.T) {
 		balance, _ := Parse("100.00", BRL)
 		createdAt := time.Now().UTC().Add(-24 * time.Hour)
 		updatedAt := time.Now().UTC()
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		w, err := RehydrateWallet(walletID, "player-1", balance, 7, createdAt, updatedAt)
 
@@ -94,7 +94,7 @@ func TestRehydrateWallet(t *testing.T) {
 
 	t.Run("Reject version less than 1", func(t *testing.T) {
 		balance, _ := Parse("100.00", BRL)
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		_, err := RehydrateWallet(walletID, "player-1", balance, 0, time.Now(), time.Now())
 
@@ -105,7 +105,7 @@ func TestRehydrateWallet(t *testing.T) {
 
 	t.Run("Reject balance negative", func(t *testing.T) {
 		balance, _ := Parse("-10.00", BRL)
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 
 		_, err := RehydrateWallet(walletID, "player-1", balance, 1, time.Now(), time.Now())
 
@@ -117,7 +117,7 @@ func TestRehydrateWallet(t *testing.T) {
 
 func TestWallet_Debit(t *testing.T) {
 	t.Run("Successfully debits and increments version", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		balance, _ := Parse("100.00", BRL)
 		w, _ := NewWallet(walletID, "player-1", balance)
 
@@ -144,7 +144,7 @@ func TestWallet_Debit(t *testing.T) {
 	})
 
 	t.Run("Rejects a debit that would result in a negative balance", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		initialAmount := "50.00"
 		debitAmount := "80.00"
 
@@ -168,7 +168,7 @@ func TestWallet_Debit(t *testing.T) {
 	})
 
 	t.Run("Allows a debit that brings the balance exactly to zero", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialAmount = "50.00"
 		var debitAmount = "50.00"
 
@@ -188,7 +188,7 @@ func TestWallet_Debit(t *testing.T) {
 	})
 
 	t.Run("Rejects balance zero", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialBalance = "50.00"
 
 		balance, _ := Parse(initialBalance, BRL)
@@ -203,7 +203,7 @@ func TestWallet_Debit(t *testing.T) {
 	})
 
 	t.Run("Rejects currency different from the wallet's", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialBalance = "50.00"
 
 		balance, _ := Parse(initialBalance, BRL)
@@ -220,7 +220,7 @@ func TestWallet_Debit(t *testing.T) {
 
 func TestWallet_Credit(t *testing.T) {
 	t.Run("Successfully credits and increments version", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialBalance = "50.00"
 		var creditAmount = "30.00"
 
@@ -248,7 +248,7 @@ func TestWallet_Credit(t *testing.T) {
 	})
 
 	t.Run("Rejects balance zero", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialBalance = "50.00"
 
 		balance, _ := Parse(initialBalance, BRL)
@@ -263,7 +263,7 @@ func TestWallet_Credit(t *testing.T) {
 	})
 
 	t.Run("Rejects currency different from the wallet's", func(t *testing.T) {
-		walletID := WalletID(uuid.New())
+		walletID := WalletID(uuid.New().String())
 		var initialBalance = "50.00"
 
 		balance, _ := Parse(initialBalance, BRL)
@@ -280,7 +280,7 @@ func TestWallet_Credit(t *testing.T) {
 }
 
 func TestWallet_DebitCredit_Sequence(t *testing.T) {
-	walletID := WalletID(uuid.New())
+	walletID := WalletID(uuid.New().String())
 	balance, _ := Parse("100.00", BRL)
 	w, _ := NewWallet(walletID, "player-1", balance)
 

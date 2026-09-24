@@ -4,15 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/cleidison-barradas/betwallet.api/internal/infra/config"
 	"go.uber.org/fx"
 )
+
+type routerParams struct {
+	fx.In
+	Routes []Route `group:"routes"`
+}
 
 type HealthResponse struct {
 	Status string `json:"status"`
 }
 
-func New(cfg config.Config) http.Handler {
+func New(p routerParams) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) {
@@ -27,9 +31,11 @@ func New(cfg config.Config) http.Handler {
 		json.NewEncoder(w).Encode(HealthResponse{Status: "OK"})
 	})
 
+	for _, route := range p.Routes {
+		route.Register(mux)
+	}
+
 	var h http.Handler = mux
 
 	return h
 }
-
-var Module = fx.Module("router", fx.Provide(New))

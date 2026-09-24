@@ -236,3 +236,17 @@ func (m *Money) UnmarshalJSON(data []byte) error {
 	*m = parsed
 	return nil
 }
+
+func (m Money) MinorUnits() int64 { return m.minorUnits }
+
+func FromMinorUnits(units int64, currency Currency) (Money, error) {
+	cur, err := newCurrency(currency)
+	if err != nil {
+		return Money{}, err
+	}
+
+	return Money{
+		minorUnits: units,
+		currency:   cur,
+	}, nil
+}

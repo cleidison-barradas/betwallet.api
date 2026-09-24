@@ -27,7 +27,7 @@ type DatabaseConfig struct {
 func Load() Config {
 	return Config{
 		Port:         getEnv("PORT", "8080"),
-		DatabaseURL:  getEnv("DATABASE_URL", ""),
+		DatabaseURL:  getEnv("DATABASE_URL", "postgres://root:root@localhost:5432/betwallet?sslmode=disable"),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,
