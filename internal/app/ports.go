@@ -30,6 +30,11 @@ type WalletLedgerPagination struct {
 	HasNext bool
 }
 
+type FindWagerTransactionByProviderParams struct {
+	ProviderID   domain.ProviderID
+	ExternalTxID string
+}
+
 type UnitOfWork interface {
 	Execute(ctx context.Context, fn func(context.Context) error) error
 }
@@ -42,6 +47,7 @@ type WalletRepository interface {
 type WagerTransactionRepository interface {
 	Save(ctx context.Context, wagerTransaction *domain.WagerTransaction) error
 	FindByID(ctx context.Context, transactionID domain.TransactionID) (*domain.WagerTransaction, error)
+	FindByProvider(ctx context.Context, params FindWagerTransactionByProviderParams) (*domain.WagerTransaction, error)
 }
 
 type WalletLedgerRepository interface {

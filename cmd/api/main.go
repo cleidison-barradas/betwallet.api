@@ -19,6 +19,7 @@ func main() {
 		fx.Provide(app.NewGetWalletByWalletID),
 		fx.Provide(app.NewGetWalletLedgerByWalletID),
 		fx.Provide(app.NewGetWagerTransaction),
+		fx.Provide(app.NewGetWagerTransactionByProvider),
 		server.Module,
 		router.Module,
 	).Run()
