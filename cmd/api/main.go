@@ -16,6 +16,8 @@ func main() {
 		idgen.Module,
 		postgres.Module,
 		fx.Provide(app.NewOpenWallet),
+		fx.Provide(app.NewGetWalletByWalletID),
+		fx.Provide(app.NewGetWalletLedgerByWalletID),
 		server.Module,
 		router.Module,
 	).Run()

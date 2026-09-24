@@ -10,12 +10,14 @@ import (
 )
 
 type walletHandler struct {
-	openWallet *app.OpenWallet
+	openWallet          *app.OpenWallet
+	getWalletByWalletID *app.GetWalletByWalletID
 }
 
-func NewWalletHandler(openWallet *app.OpenWallet) *walletHandler {
+func NewWalletHandler(openWallet *app.OpenWallet, getWalletByWalletID *app.GetWalletByWalletID) *walletHandler {
 	return &walletHandler{
-		openWallet: openWallet,
+		openWallet:          openWallet,
+		getWalletByWalletID: getWalletByWalletID,
 	}
 }
 
@@ -62,6 +64,27 @@ func (h *walletHandler) handleOpenWallet(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (h *walletHandler) handleGetWalletByWalletID(w http.ResponseWriter, r *http.Request) {
+	walletID := r.PathValue("walletId")
+
+	result, err := h.getWalletByWalletID.Execute(r.Context(), app.GetWalletByWalletIDCommand{
+		WalletID: walletID,
+	})
+
+	if err != nil {
+		utils.Error(w, r, http.StatusBadRequest, err)
+		return
+	}
+
+	utils.Success(w, r, http.StatusOK, walletResponse{
+		ID:       result.WalletID,
+		PlayerID: result.PlayerID,
+		Balance:  result.Balance,
+		Version:  result.Version,
+	})
+}
+
 func (h *walletHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /wallets", h.handleOpenWallet)
+	mux.HandleFunc("GET /wallets/{walletId}", h.handleGetWalletByWalletID)
 }

@@ -7,7 +7,13 @@ var Module = fx.Module("router",
 		fx.Annotate(
 			NewWalletHandler,
 			fx.As(new(Route)),
-			fx.ResultTags(`group:"routes"`)),
+			fx.ResultTags(`group:"routes"`),
+		),
+		fx.Annotate(
+			NewWalletLedgerHandler,
+			fx.As(new(Route)),
+			fx.ResultTags(`group:"routes"`),
+		),
 	),
 	fx.Provide(New),
 )

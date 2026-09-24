@@ -23,7 +23,7 @@ type OpenWallet struct {
 	uow          UnitOfWork
 	wallets      WalletRepository
 	transactions WagerTransactionRepository
-	ledger       LedgerRepository
+	ledger       WalletLedgerRepository
 	outbox       OutboxRepository
 	ids          IDGenerator
 }
@@ -32,7 +32,7 @@ func NewOpenWallet(
 	uow UnitOfWork,
 	wallets WalletRepository,
 	transactions WagerTransactionRepository,
-	ledger LedgerRepository,
+	ledger WalletLedgerRepository,
 	outbox OutboxRepository,
 	ids IDGenerator,
 ) *OpenWallet {
