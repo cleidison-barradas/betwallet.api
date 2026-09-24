@@ -24,7 +24,7 @@ type Wallet struct {
 	updatedAt time.Time
 }
 
-func NewWallet(playerID PlayerID, initialBalance Money) (*Wallet, error) {
+func NewWallet(walletID WalletID, playerID PlayerID, initialBalance Money) (*Wallet, error) {
 
 	if playerID == "" {
 		return nil, fmt.Errorf("%w: player id is required", ErrWalletStateInvalid)
@@ -37,6 +37,7 @@ func NewWallet(playerID PlayerID, initialBalance Money) (*Wallet, error) {
 	now := time.Now().UTC()
 
 	return &Wallet{
+		id:        walletID,
 		playerID:  playerID,
 		balance:   initialBalance,
 		version:   1,
@@ -77,6 +78,7 @@ func (w *Wallet) Currency() Currency   { return w.balance.Currency() }
 func (w *Wallet) Version() int64       { return w.version }
 func (w *Wallet) CreatedAt() time.Time { return w.createdAt }
 func (w *Wallet) UpdatedAt() time.Time { return w.updatedAt }
+func (w *Wallet) ToStringID() string   { return uuid.UUID(w.id).String() }
 
 func (w *Wallet) Debit(amount Money) (Movement, error) {
 	if !amount.IsPositive() {

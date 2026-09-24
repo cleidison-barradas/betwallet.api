@@ -41,7 +41,6 @@ func NewWalletLedgerEntry(
 	amount Money,
 	balanceBefore Money,
 	balanceAfter Money,
-	createdAt time.Time,
 ) (*WalletLedgerEntry, error) {
 
 	if !direction.valid() {
@@ -96,7 +95,7 @@ func RehydrateWalletLedgerEntry(
 	balanceAfter Money,
 	createdAt time.Time,
 ) (*WalletLedgerEntry, error) {
-	entry, err := NewWalletLedgerEntry(id, walletID, transactionID, direction, amount, balanceBefore, balanceAfter, createdAt)
+	entry, err := NewWalletLedgerEntry(id, walletID, transactionID, direction, amount, balanceBefore, balanceAfter)
 	if err != nil {
 		return nil, err
 	}

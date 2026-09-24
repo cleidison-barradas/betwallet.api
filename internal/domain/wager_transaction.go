@@ -163,7 +163,7 @@ func validateMoneyForKind(kind WagerKind, money Money) error {
 	return nil
 }
 
-func NewOpeningTransaction(i TransactionID, walletID WalletID, player PlayerID, money Money) (*WagerTransaction, error) {
+func NewOpeningTransaction(transactionID TransactionID, walletID WalletID, player PlayerID, money Money) (*WagerTransaction, error) {
 
 	if player == "" {
 		return nil, fmt.Errorf("%w: player id is required", ErrWagerInvalidTransactionState)
@@ -176,7 +176,7 @@ func NewOpeningTransaction(i TransactionID, walletID WalletID, player PlayerID, 
 	now := time.Now().UTC()
 
 	return &WagerTransaction{
-		id:        i,
+		id:        transactionID,
 		kind:      KindOpening,
 		status:    StatusPending,
 		walletID:  walletID,
@@ -242,6 +242,7 @@ func (t *WagerTransaction) GameID() GameID                         { return t.ga
 func (t *WagerTransaction) ReferenceExternalTransactionID() string { return t.referenceExternalTxID }
 func (t *WagerTransaction) FailureCode() string                    { return t.failureCode }
 func (t *WagerTransaction) UpdatedAt() time.Time                   { return t.updatedAt }
+func (t *WagerTransaction) ToStringID() string                     { return uuid.UUID(t.id).String() }
 
 func (t *WagerTransaction) transitionGuard() error {
 	if t.status != StatusPending {

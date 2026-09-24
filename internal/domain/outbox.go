@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var ErrInvalidOutboxEntry = errors.New("outbox: invalid state entry")
 
-type OutboxEventID string
+type OutboxEventID uuid.UUID
 
 type OutboxEntry struct {
 	eventID       OutboxEventID
@@ -28,8 +30,8 @@ func NewOutboxEntry(
 	payload []byte,
 ) (*OutboxEntry, error) {
 
-	if eventID == "" || aggregateID == "" || eventType == "" || len(payload) == 0 {
-		return nil, fmt.Errorf("%w: missing required fields eventID=%s, aggregateID=%s, eventType=%s, payload=%v", ErrInvalidOutboxEntry, eventID, aggregateID, eventType, payload)
+	if aggregateID == "" || eventType == "" || len(payload) == 0 {
+		return nil, fmt.Errorf("%w: missing required fields aggregateID=%s, eventType=%s, payload=%v", ErrInvalidOutboxEntry, aggregateID, eventType, payload)
 	}
 
 	now := time.Now().UTC()
@@ -74,6 +76,7 @@ func (e *OutboxEntry) OccurredAt() time.Time    { return e.occurredAt }
 func (e *OutboxEntry) Attempts() int            { return e.attempts }
 func (e *OutboxEntry) NextAttemptAt() time.Time { return e.nextAttemptAt }
 func (e *OutboxEntry) IsPublished() bool        { return e.publishedAt != nil }
+func (e *OutboxEntry) ToStringID() string       { return uuid.UUID(e.eventID).String() }
 
 func (e *OutboxEntry) IsDue(now time.Time) bool {
 	return !e.IsPublished() && !now.Before(e.nextAttemptAt)
