@@ -50,12 +50,12 @@ type processWagerTransactionResponse struct {
 }
 
 func (h *wagerTransactionHandler) handleGetWagerTransaction(w http.ResponseWriter, r *http.Request) {
-	transactionID := domain.TransactionID(r.PathValue("transactionId"))
+	transactionID := r.PathValue("transactionId")
 	providerID := auth.ProviderIDFromContext(r.Context())
 
 	result, err := h.getWagerTransaction.Execute(r.Context(), app.GetWagerTransactionByIDCommand{
 		TransactionID: transactionID,
-		ProviderID:    domain.ProviderID(providerID),
+		ProviderID:    providerID,
 	})
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (h *wagerTransactionHandler) handleGetWagerTransactionByProvider(w http.Res
 	externalTxID := r.PathValue("externalTransactionId")
 
 	result, err := h.getWagerTransactionByProvider.Execute(r.Context(), app.GetWagerTransactionByProviderCommand{
-		ProviderID:   domain.ProviderID(providerID),
+		ProviderID:   providerID,
 		ExternalTxID: externalTxID,
 	})
 

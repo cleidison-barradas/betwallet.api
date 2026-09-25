@@ -10,57 +10,69 @@ var (
 	ErrWalletStateInvalid     = fmt.Errorf("invalid wallet state")
 )
 
-type PlayerID string
-type WalletID string
-
 type Wallet struct {
-	id        WalletID
-	playerID  PlayerID
+	id        string
+	playerID  string
 	balance   Money
 	version   int64
 	createdAt time.Time
 	updatedAt time.Time
 }
 
-func NewWallet(walletID WalletID, playerID PlayerID, initialBalance Money) (*Wallet, error) {
+type NewWalletParams struct {
+	WalletID       string
+	PlayerID       string
+	InitialBalance Money
+}
 
-	if playerID == "" {
-		return nil, fmt.Errorf("%w: player id is required", ErrWalletStateInvalid)
+type RehydrateWalletParams struct {
+	WalletID  string
+	PlayerID  string
+	Balance   Money
+	Version   int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func NewWallet(p NewWalletParams) (*Wallet, error) {
+
+	if p.WalletID == "" || p.PlayerID == "" {
+		return nil, fmt.Errorf("%w: walletID and playerID are required", ErrWalletStateInvalid)
 	}
 
-	if initialBalance.IsNegative() {
+	if p.InitialBalance.IsNegative() {
 		return nil, fmt.Errorf("%w: insufficient balance", ErrWalletNotEnoughBalance)
 	}
 
 	now := time.Now().UTC()
 
 	return &Wallet{
-		id:        walletID,
-		playerID:  playerID,
-		balance:   initialBalance,
+		id:        p.WalletID,
+		playerID:  p.PlayerID,
+		balance:   p.InitialBalance,
 		version:   1,
 		createdAt: now,
 		updatedAt: now,
 	}, nil
 }
 
-func RehydrateWallet(id WalletID, playerID PlayerID, balance Money, version int64, createdAt, updatedAt time.Time) (*Wallet, error) {
+func RehydrateWallet(p RehydrateWalletParams) (*Wallet, error) {
 
-	if version < 1 {
-		return nil, fmt.Errorf("%w: invalid version (%d)", ErrWalletStateInvalid, version)
+	if p.Version < 1 {
+		return nil, fmt.Errorf("%w: invalid version (%d)", ErrWalletStateInvalid, p.Version)
 	}
 
-	if balance.IsNegative() {
+	if p.Balance.IsNegative() {
 		return nil, fmt.Errorf("%w: insufficient balance", ErrWalletNotEnoughBalance)
 	}
 
 	return &Wallet{
-		id:        id,
-		playerID:  playerID,
-		balance:   balance,
-		version:   version,
-		createdAt: createdAt,
-		updatedAt: updatedAt,
+		id:        p.WalletID,
+		playerID:  p.PlayerID,
+		balance:   p.Balance,
+		version:   p.Version,
+		createdAt: p.CreatedAt,
+		updatedAt: p.UpdatedAt,
 	}, nil
 }
 
@@ -69,14 +81,13 @@ type Movement struct {
 	BalanceAfter  Money
 }
 
-func (w *Wallet) ID() WalletID         { return w.id }
-func (w *Wallet) PlayerID() PlayerID   { return w.playerID }
+func (w *Wallet) ID() string           { return w.id }
+func (w *Wallet) PlayerID() string     { return w.playerID }
 func (w *Wallet) Balance() Money       { return w.balance }
 func (w *Wallet) Currency() Currency   { return w.balance.Currency() }
 func (w *Wallet) Version() int64       { return w.version }
 func (w *Wallet) CreatedAt() time.Time { return w.createdAt }
 func (w *Wallet) UpdatedAt() time.Time { return w.updatedAt }
-func (w *Wallet) ToStringID() string   { return string(w.id) }
 
 func (w *Wallet) Debit(amount Money) (Movement, error) {
 	if !amount.IsPositive() {

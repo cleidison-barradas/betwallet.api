@@ -23,7 +23,7 @@ type WalletLedgerCursor struct {
 }
 
 type ListWalletLedgerParams struct {
-	WalletID domain.WalletID
+	WalletID string
 	Cursor   *WalletLedgerCursor
 	Limit    int
 }
@@ -35,7 +35,7 @@ type WalletLedgerPagination struct {
 }
 
 type FindWagerTransactionByProviderParams struct {
-	ProviderID   domain.ProviderID
+	ProviderID   string
 	ExternalTxID string
 }
 
@@ -45,13 +45,13 @@ type UnitOfWork interface {
 
 type WalletRepository interface {
 	Create(ctx context.Context, wallet *domain.Wallet) error
-	FindByID(ctx context.Context, walletID domain.WalletID) (*domain.Wallet, error)
+	FindByID(ctx context.Context, walletID string) (*domain.Wallet, error)
 	Update(ctx context.Context, wallet *domain.Wallet, prevVersion int64) error
 }
 
 type WagerTransactionRepository interface {
 	Save(ctx context.Context, wagerTransaction *domain.WagerTransaction) error
-	FindByID(ctx context.Context, transactionID domain.TransactionID, providerID domain.ProviderID) (*domain.WagerTransaction, error)
+	FindByID(ctx context.Context, transactionID string, providerID string) (*domain.WagerTransaction, error)
 	FindByProvider(ctx context.Context, params FindWagerTransactionByProviderParams) (*domain.WagerTransaction, error)
 	FindByIdempotencyKey(ctx context.Context, idempotencyKey string) (*domain.WagerTransaction, error)
 }
@@ -59,7 +59,7 @@ type WagerTransactionRepository interface {
 type WalletLedgerRepository interface {
 	Append(ctx context.Context, ledgerEntry *domain.WalletLedgerEntry) error
 	ListWalletLedger(ctx context.Context, params ListWalletLedgerParams) (*WalletLedgerPagination, error)
-	FindByTransactionID(ctx context.Context, transactionID domain.TransactionID) (*domain.WalletLedgerEntry, error)
+	FindByTransactionID(ctx context.Context, transactionID string) (*domain.WalletLedgerEntry, error)
 }
 
 type OutboxRepository interface {

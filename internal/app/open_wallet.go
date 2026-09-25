@@ -47,10 +47,13 @@ func NewOpenWallet(
 }
 
 func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*OpenWalletResult, error) {
-	walletID := domain.WalletID(uc.ids.NewID().String())
-	playerID := domain.PlayerID(cmd.PlayerID)
+	walletID := uc.ids.NewID().String()
 
-	wallet, err := domain.NewWallet(walletID, playerID, cmd.InitialBalance)
+	wallet, err := domain.NewWallet(domain.NewWalletParams{
+		WalletID:       walletID,
+		PlayerID:       cmd.PlayerID,
+		InitialBalance: cmd.InitialBalance,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("erro on open wallet: %w", err)
 	}
@@ -72,17 +75,22 @@ func (uc *OpenWallet) Execute(ctx context.Context, cmd OpenWalletCommand) (*Open
 	}
 
 	return &OpenWalletResult{
-		WalletID: string(walletID),
-		PlayerID: string(playerID),
+		WalletID: wallet.ID(),
+		PlayerID: wallet.PlayerID(),
 		Balance:  wallet.Balance(),
 		Version:  wallet.Version(),
 	}, nil
 }
 
 func (uc *OpenWallet) recordOpeningCredit(ctx context.Context, wallet *domain.Wallet) error {
-	transactionID := domain.TransactionID(uc.ids.NewID().String())
+	transactionID := uc.ids.NewID().String()
 
-	openingTransaction, err := domain.NewOpeningTransaction(transactionID, wallet.ID(), wallet.PlayerID(), wallet.Balance())
+	openingTransaction, err := domain.NewOpeningTransaction(domain.NewOpeningTransactionParams{
+		TransactionID: transactionID,
+		WalletID:      wallet.ID(),
+		PlayerID:      wallet.PlayerID(),
+		Money:         wallet.Balance(),
+	})
 	if err != nil {
 		return err
 	}
@@ -100,16 +108,16 @@ func (uc *OpenWallet) recordOpeningCredit(ctx context.Context, wallet *domain.Wa
 		return err
 	}
 
-	entryID := domain.LedgerEntryID(uc.ids.NewID().String())
-	entry, err := domain.NewWalletLedgerEntry(
-		entryID,
-		wallet.ID(),
-		transactionID,
-		domain.DirectionCredit,
-		wallet.Balance(),
-		zeroBalance,
-		wallet.Balance(),
-	)
+	entryID := uc.ids.NewID().String()
+	entry, err := domain.NewWalletLedgerEntry(domain.NewWalletLedgerEntryParams{
+		ID:            entryID,
+		WalletID:      wallet.ID(),
+		TransactionID: transactionID,
+		Direction:     domain.DirectionCredit,
+		Amount:        wallet.Balance(),
+		BalanceBefore: zeroBalance,
+		BalanceAfter:  wallet.Balance(),
+	})
 	if err != nil {
 		return err
 	}
@@ -121,24 +129,29 @@ func (uc *OpenWallet) recordOpeningCredit(ctx context.Context, wallet *domain.Wa
 	return uc.publishOpeningEvents(ctx, wallet, transactionID, entry)
 }
 
-func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.Wallet, transactionID domain.TransactionID, entry *domain.WalletLedgerEntry) error {
+func (uc *OpenWallet) publishOpeningEvents(
+	ctx context.Context,
+	wallet *domain.Wallet,
+	transactionID string,
+	entry *domain.WalletLedgerEntry,
+) error {
 	correlationID := uc.ids.NewID().String()
 
 	processedData := WagerTransactionProcessedData{
-		TransactionID: string(transactionID),
+		TransactionID: transactionID,
 		Kind:          string(domain.KindOpening),
-		WalletID:      wallet.ToStringID(),
+		WalletID:      wallet.ID(),
 	}
 
 	processedData.Money.Amount = wallet.Balance().String()
 	processedData.Money.Currency = string(wallet.Currency())
 
-	processedPayload, err := NewEvent(uc.ids.NewID().String(), "WagerTransactionProcessed", wallet.ToStringID(), correlationID, 1, processedData)
+	processedPayload, err := NewEvent(uc.ids.NewID().String(), "WagerTransactionProcessed", wallet.ID(), correlationID, 1, processedData)
 	if err != nil {
 		return err
 	}
 
-	processedEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ToStringID(), "WagerTransactionProcessed", processedPayload)
+	processedEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ID(), "WagerTransactionProcessed", processedPayload)
 	if err != nil {
 		return err
 	}
@@ -148,8 +161,8 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 	}
 
 	balanceChangedData := WalletBalanceChangedData{
-		WalletID:      wallet.ToStringID(),
-		TransactionID: string(transactionID),
+		WalletID:      wallet.ID(),
+		TransactionID: transactionID,
 		Direction:     string(domain.DirectionCredit),
 		BalanceBefore: entry.BalanceBefore().String(),
 		BalanceAfter:  entry.BalanceAfter().String(),
@@ -159,12 +172,12 @@ func (uc *OpenWallet) publishOpeningEvents(ctx context.Context, wallet *domain.W
 	balanceChangedData.Money.Amount = wallet.Balance().String()
 	balanceChangedData.Money.Currency = string(wallet.Currency())
 
-	balancePayload, err := NewEvent(uc.ids.NewID().String(), "WalletBalanceChanged", wallet.ToStringID(), correlationID, 1, balanceChangedData)
+	balancePayload, err := NewEvent(uc.ids.NewID().String(), "WalletBalanceChanged", wallet.ID(), correlationID, 1, balanceChangedData)
 	if err != nil {
 		return err
 	}
 
-	balanceEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ToStringID(), "WalletBalanceChanged", balancePayload)
+	balanceEvent, err := domain.NewOutboxEntry(domain.OutboxEventID(uc.ids.NewID().String()), wallet.ID(), "WalletBalanceChanged", balancePayload)
 	if err != nil {
 		return err
 	}

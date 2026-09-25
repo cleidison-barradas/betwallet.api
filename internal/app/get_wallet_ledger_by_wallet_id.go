@@ -66,7 +66,7 @@ func (uc *GetWalletLedgerByWalletID) Execute(ctx context.Context, cmd GetWalletL
 	}
 
 	result, err := uc.ledger.ListWalletLedger(ctx, ListWalletLedgerParams{
-		WalletID: domain.WalletID(cmd.WalletID),
+		WalletID: cmd.WalletID,
 		Cursor:   cursorDecoded,
 		Limit:    cmd.Limit,
 	})

@@ -28,14 +28,14 @@ func NewGetWalletByWalletID(wallets WalletRepository) *GetWalletByWalletID {
 }
 
 func (uc *GetWalletByWalletID) Execute(ctx context.Context, cmd GetWalletByWalletIDCommand) (*GetWalletByWalletIDResult, error) {
-	wallet, err := uc.wallets.FindByID(ctx, domain.WalletID(cmd.WalletID))
+	wallet, err := uc.wallets.FindByID(ctx, cmd.WalletID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GetWalletByWalletIDResult{
-		WalletID: wallet.ToStringID(),
-		PlayerID: string(wallet.PlayerID()),
+		WalletID: wallet.ID(),
+		PlayerID: wallet.PlayerID(),
 		Balance:  wallet.Balance(),
 		Version:  wallet.Version(),
 	}, nil

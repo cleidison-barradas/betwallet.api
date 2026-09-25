@@ -8,8 +8,8 @@ import (
 )
 
 type GetWagerTransactionByIDCommand struct {
-	TransactionID domain.TransactionID
-	ProviderID    domain.ProviderID
+	TransactionID string
+	ProviderID    string
 }
 
 type GetWagerTransaction struct {
@@ -17,23 +17,23 @@ type GetWagerTransaction struct {
 }
 
 type WagerTransactionResult struct {
-	Id                    string                `json:"id"`
-	Kind                  string                `json:"kind"`
-	Status                string                `json:"status"`
-	WalletID              string                `json:"walletId"`
-	PlayerID              string                `json:"playerId"`
-	Money                 domain.Money          `json:"money"`
-	ProviderID            *domain.ProviderID    `json:"providerId"`
-	ExternalTransactionID string                `json:"externalTransactionId"`
-	IdempotencyKey        string                `json:"idempotencyKey"`
-	PayloadHash           string                `json:"payloadHash"`
-	RoundID               *domain.RoundID       `json:"roundId"`
-	GameID                *domain.GameID        `json:"gameId"`
-	ReferenceExternalTxID string                `json:"referenceExternalTransactionId"`
-	ResolvedReferenceID   *domain.TransactionID `json:"resolvedReferenceId"`
-	FailureCode           string                `json:"failureCode"`
-	CreatedAt             time.Time             `json:"createdAt"`
-	UpdatedAt             time.Time             `json:"updatedAt"`
+	Id                    string       `json:"id"`
+	Kind                  string       `json:"kind"`
+	Status                string       `json:"status"`
+	WalletID              string       `json:"walletId"`
+	PlayerID              string       `json:"playerId"`
+	Money                 domain.Money `json:"money"`
+	ProviderID            string       `json:"providerId"`
+	ExternalTransactionID string       `json:"externalTransactionId"`
+	IdempotencyKey        string       `json:"idempotencyKey"`
+	PayloadHash           string       `json:"payloadHash"`
+	RoundID               string       `json:"roundId"`
+	GameID                string       `json:"gameId"`
+	ReferenceExternalTxID string       `json:"referenceExternalTransactionId"`
+	ResolvedReferenceID   string       `json:"resolvedReferenceId"`
+	FailureCode           string       `json:"failureCode"`
+	CreatedAt             time.Time    `json:"createdAt"`
+	UpdatedAt             time.Time    `json:"updatedAt"`
 }
 
 func NewGetWagerTransaction(repo WagerTransactionRepository) *GetWagerTransaction {
@@ -47,21 +47,21 @@ func (uc *GetWagerTransaction) Execute(ctx context.Context, cmd GetWagerTransact
 	}
 
 	return &WagerTransactionResult{
-		Id:                    string(transaction.ID()),
+		Id:                    transaction.ID(),
 		Kind:                  string(transaction.Kind()),
 		Status:                string(transaction.Status()),
-		WalletID:              string(transaction.WalletID()),
-		PlayerID:              string(transaction.PlayerID()),
+		WalletID:              transaction.WalletID(),
+		PlayerID:              transaction.PlayerID(),
 		Money:                 transaction.Money(),
-		ProviderID:            transaction.ProviderID(),
-		ExternalTransactionID: transaction.ExternalTransactionID(),
-		IdempotencyKey:        transaction.IdempotencyKey(),
-		PayloadHash:           transaction.PayloadHash(),
-		RoundID:               transaction.RoundID(),
-		GameID:                transaction.GameID(),
-		ReferenceExternalTxID: transaction.ReferenceExternalTransactionID(),
-		ResolvedReferenceID:   transaction.ResolvedReferenceID(),
-		FailureCode:           transaction.FailureCode(),
+		ProviderID:            *transaction.ProviderID(),
+		ExternalTransactionID: *transaction.ExternalTransactionID(),
+		IdempotencyKey:        *transaction.IdempotencyKey(),
+		PayloadHash:           *transaction.PayloadHash(),
+		RoundID:               *transaction.RoundID(),
+		GameID:                *transaction.GameID(),
+		ReferenceExternalTxID: *transaction.ReferenceExternalTransactionID(),
+		ResolvedReferenceID:   *transaction.ResolvedReferenceID(),
+		FailureCode:           *transaction.FailureCode(),
 		CreatedAt:             transaction.CreatedAt(),
 		UpdatedAt:             transaction.UpdatedAt(),
 	}, nil

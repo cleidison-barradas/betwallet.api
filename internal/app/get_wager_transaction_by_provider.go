@@ -2,12 +2,10 @@ package app
 
 import (
 	"context"
-
-	"github.com/cleidison-barradas/betwallet.api/internal/domain"
 )
 
 type GetWagerTransactionByProviderCommand struct {
-	ProviderID   domain.ProviderID
+	ProviderID   string
 	ExternalTxID string
 }
 
@@ -29,21 +27,21 @@ func (uc *GetWagerTransactionByProvider) Execute(ctx context.Context, command Ge
 	}
 
 	return &WagerTransactionResult{
-		Id:                    string(transaction.ID()),
+		Id:                    transaction.ID(),
 		Kind:                  string(transaction.Kind()),
 		Status:                string(transaction.Status()),
-		WalletID:              string(transaction.WalletID()),
-		PlayerID:              string(transaction.PlayerID()),
+		WalletID:              transaction.WalletID(),
+		PlayerID:              transaction.PlayerID(),
 		Money:                 transaction.Money(),
-		ProviderID:            transaction.ProviderID(),
-		ExternalTransactionID: transaction.ExternalTransactionID(),
-		IdempotencyKey:        transaction.IdempotencyKey(),
-		PayloadHash:           transaction.PayloadHash(),
-		RoundID:               transaction.RoundID(),
-		GameID:                transaction.GameID(),
-		ReferenceExternalTxID: transaction.ReferenceExternalTransactionID(),
-		ResolvedReferenceID:   transaction.ResolvedReferenceID(),
-		FailureCode:           transaction.FailureCode(),
+		ProviderID:            *transaction.ProviderID(),
+		ExternalTransactionID: *transaction.ExternalTransactionID(),
+		IdempotencyKey:        *transaction.IdempotencyKey(),
+		PayloadHash:           *transaction.PayloadHash(),
+		RoundID:               *transaction.RoundID(),
+		GameID:                *transaction.GameID(),
+		ReferenceExternalTxID: *transaction.ReferenceExternalTransactionID(),
+		ResolvedReferenceID:   *transaction.ResolvedReferenceID(),
+		FailureCode:           *transaction.FailureCode(),
 		CreatedAt:             transaction.CreatedAt(),
 		UpdatedAt:             transaction.UpdatedAt(),
 	}, nil

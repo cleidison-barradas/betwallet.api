@@ -56,43 +56,38 @@ func (s WagerStatus) isTerminal() bool {
 	}
 }
 
-type TransactionID string
-type ProviderID string
-type RoundID string
-type GameID string
-
 type WagerTransaction struct {
-	id                    TransactionID
+	id                    string
 	kind                  WagerKind
 	status                WagerStatus
-	walletID              WalletID
-	playerID              PlayerID
+	walletID              string
+	playerID              string
 	money                 Money
-	providerID            *ProviderID
-	externalTransactionID string
-	idempotencyKey        string
-	payloadHash           string
-	roundID               *RoundID
-	gameID                *GameID
-	referenceExternalTxID string
-	resolvedReferenceID   *TransactionID
-	failureCode           string
+	providerID            *string
+	externalTransactionID *string
+	idempotencyKey        *string
+	payloadHash           *string
+	roundID               *string
+	gameID                *string
+	referenceExternalTxID *string
+	resolvedReferenceID   *string
+	failureCode           *string
 	createdAt             time.Time
 	updatedAt             time.Time
 }
 
 type ExternalWagerInput struct {
-	ID                             TransactionID
+	ID                             string
 	Kind                           WagerKind
-	WalletID                       WalletID
-	PlayerID                       PlayerID
+	WalletID                       string
+	PlayerID                       string
 	Money                          Money
-	ProviderID                     *ProviderID
+	ProviderID                     string
 	ExternalTransactionID          string
 	IdempotencyKey                 string
 	PayloadHash                    string
-	RoundID                        *RoundID
-	GameID                         *GameID
+	RoundID                        string
+	GameID                         string
 	ReferenceExternalTransactionID string
 }
 
@@ -101,15 +96,15 @@ func NewExternalWagerTransaction(input ExternalWagerInput) (*WagerTransaction, e
 		return nil, fmt.Errorf("%w: invalid transaction type", ErrWagerInvalidTransactionType)
 	}
 
-	if input.PlayerID == "" {
-		return nil, fmt.Errorf("%w: player id is required", ErrWagerInvalidTransactionState)
+	if input.ID == "" || input.WalletID == "" || input.PlayerID == "" {
+		return nil, fmt.Errorf("%w: id, wallet id and player id are required", ErrWagerInvalidTransactionState)
 	}
 
-	if input.ProviderID == nil || input.ExternalTransactionID == "" || input.IdempotencyKey == "" {
+	if input.ProviderID == "" || input.ExternalTransactionID == "" || input.IdempotencyKey == "" {
 		return nil, fmt.Errorf("%w: provider id, external transaction id and idempotency key are required", ErrWagerInvalidTransactionState)
 	}
 
-	if input.RoundID == nil || input.GameID == nil {
+	if input.RoundID == "" || input.GameID == "" {
 		return nil, fmt.Errorf("%w: round id and game id are required", ErrWagerInvalidTransactionState)
 	}
 
@@ -136,13 +131,13 @@ func NewExternalWagerTransaction(input ExternalWagerInput) (*WagerTransaction, e
 		walletID:              input.WalletID,
 		playerID:              input.PlayerID,
 		money:                 input.Money,
-		providerID:            input.ProviderID,
-		externalTransactionID: input.ExternalTransactionID,
-		idempotencyKey:        input.IdempotencyKey,
-		payloadHash:           input.PayloadHash,
-		roundID:               input.RoundID,
-		gameID:                input.GameID,
-		referenceExternalTxID: input.ReferenceExternalTransactionID,
+		providerID:            &input.ProviderID,
+		externalTransactionID: &input.ExternalTransactionID,
+		idempotencyKey:        &input.IdempotencyKey,
+		payloadHash:           &input.PayloadHash,
+		roundID:               &input.RoundID,
+		gameID:                &input.GameID,
+		referenceExternalTxID: &input.ReferenceExternalTransactionID,
 		createdAt:             now,
 		updatedAt:             now,
 	}, nil
@@ -163,87 +158,97 @@ func validateMoneyForKind(kind WagerKind, money Money) error {
 	return nil
 }
 
-func NewOpeningTransaction(transactionID TransactionID, walletID WalletID, playerID PlayerID, money Money) (*WagerTransaction, error) {
+type NewOpeningTransactionParams struct {
+	TransactionID string
+	WalletID      string
+	PlayerID      string
+	Money         Money
+}
 
-	if transactionID == "" || walletID == "" || playerID == "" {
+func NewOpeningTransaction(p NewOpeningTransactionParams) (*WagerTransaction, error) {
+
+	if p.TransactionID == "" || p.WalletID == "" || p.PlayerID == "" {
 		return nil, fmt.Errorf(" %w: transactionID, walletID and playerID are required", ErrWagerInvalidTransactionState)
 	}
 
-	if money.IsNegative() {
+	if p.Money.IsNegative() {
 		return nil, fmt.Errorf("%w: money must be positive", ErrWagerInvalidTransactionState)
 	}
 
 	now := time.Now().UTC()
 
 	return &WagerTransaction{
-		id:        transactionID,
+		id:        p.TransactionID,
 		kind:      KindOpening,
 		status:    StatusPending,
-		walletID:  walletID,
-		playerID:  playerID,
-		money:     money,
+		walletID:  p.WalletID,
+		playerID:  p.PlayerID,
+		money:     p.Money,
 		createdAt: now,
 		updatedAt: now,
 	}, nil
 }
 
-func RehydrateWagerTransaction(
-	id TransactionID,
-	kind WagerKind,
-	status WagerStatus,
-	walletID WalletID,
-	playerID PlayerID,
-	money Money,
-	providerID *ProviderID,
-	externalTransactionID string,
-	idempotencyKey string,
-	payloadHash string,
-	roundID *RoundID,
-	gameID *GameID,
-	referenceExternalTxID string,
-	resolvedReferenceID *TransactionID,
-	failureCode string,
-	createdAt, updatedAt time.Time,
-) (*WagerTransaction, error) {
+type RehydrateWagerTransactionParams struct {
+	ID                    string
+	Kind                  WagerKind
+	Status                WagerStatus
+	WalletID              string
+	PlayerID              string
+	Money                 Money
+	ProviderID            *string
+	ExternalTransactionID *string
+	IdempotencyKey        *string
+	PayloadHash           *string
+	RoundID               *string
+	GameID                *string
+	ReferenceExternalTxID *string
+	ResolvedReferenceID   *string
+	FailureCode           *string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+func RehydrateWagerTransaction(p RehydrateWagerTransactionParams) (*WagerTransaction, error) {
 
 	return &WagerTransaction{
-		id:                    id,
-		kind:                  kind,
-		status:                status,
-		walletID:              walletID,
-		playerID:              playerID,
-		money:                 money,
-		providerID:            providerID,
-		externalTransactionID: externalTransactionID,
-		idempotencyKey:        idempotencyKey,
-		payloadHash:           payloadHash,
-		roundID:               roundID,
-		gameID:                gameID,
-		referenceExternalTxID: referenceExternalTxID,
-		resolvedReferenceID:   resolvedReferenceID,
-		failureCode:           failureCode,
-		createdAt:             createdAt,
-		updatedAt:             updatedAt,
+		id:                    p.ID,
+		kind:                  p.Kind,
+		status:                p.Status,
+		walletID:              p.WalletID,
+		playerID:              p.PlayerID,
+		money:                 p.Money,
+		providerID:            p.ProviderID,
+		externalTransactionID: p.ExternalTransactionID,
+		idempotencyKey:        p.IdempotencyKey,
+		payloadHash:           p.PayloadHash,
+		roundID:               p.RoundID,
+		gameID:                p.GameID,
+		referenceExternalTxID: p.ReferenceExternalTxID,
+		resolvedReferenceID:   p.ResolvedReferenceID,
+		failureCode:           p.FailureCode,
+		createdAt:             p.CreatedAt,
+		updatedAt:             p.UpdatedAt,
 	}, nil
 }
 
-func (t *WagerTransaction) ID() TransactionID                      { return t.id }
-func (t *WagerTransaction) Kind() WagerKind                        { return t.kind }
-func (t *WagerTransaction) Status() WagerStatus                    { return t.status }
-func (t *WagerTransaction) WalletID() WalletID                     { return t.walletID }
-func (t *WagerTransaction) PlayerID() PlayerID                     { return t.playerID }
-func (t *WagerTransaction) Money() Money                           { return t.money }
-func (t *WagerTransaction) ProviderID() *ProviderID                { return t.providerID }
-func (t *WagerTransaction) ExternalTransactionID() string          { return t.externalTransactionID }
-func (t *WagerTransaction) IdempotencyKey() string                 { return t.idempotencyKey }
-func (t *WagerTransaction) PayloadHash() string                    { return t.payloadHash }
-func (t *WagerTransaction) RoundID() *RoundID                      { return t.roundID }
-func (t *WagerTransaction) GameID() *GameID                        { return t.gameID }
-func (t *WagerTransaction) ReferenceExternalTransactionID() string { return t.referenceExternalTxID }
-func (t *WagerTransaction) FailureCode() string                    { return t.failureCode }
-func (t *WagerTransaction) UpdatedAt() time.Time                   { return t.updatedAt }
-func (t *WagerTransaction) CreatedAt() time.Time                   { return t.createdAt }
-func (t *WagerTransaction) ResolvedReferenceID() *TransactionID    { return t.resolvedReferenceID }
+func (t *WagerTransaction) ID() string                              { return t.id }
+func (t *WagerTransaction) Kind() WagerKind                         { return t.kind }
+func (t *WagerTransaction) Status() WagerStatus                     { return t.status }
+func (t *WagerTransaction) WalletID() string                        { return t.walletID }
+func (t *WagerTransaction) PlayerID() string                        { return t.playerID }
+func (t *WagerTransaction) Money() Money                            { return t.money }
+func (t *WagerTransaction) ProviderID() *string                     { return t.providerID }
+func (t *WagerTransaction) ExternalTransactionID() *string          { return t.externalTransactionID }
+func (t *WagerTransaction) IdempotencyKey() *string                 { return t.idempotencyKey }
+func (t *WagerTransaction) PayloadHash() *string                    { return t.payloadHash }
+func (t *WagerTransaction) RoundID() *string                        { return t.roundID }
+func (t *WagerTransaction) GameID() *string                         { return t.gameID }
+func (t *WagerTransaction) ReferenceExternalTransactionID() *string { return t.referenceExternalTxID }
+func (t *WagerTransaction) FailureCode() *string                    { return t.failureCode }
+func (t *WagerTransaction) UpdatedAt() time.Time                    { return t.updatedAt }
+func (t *WagerTransaction) CreatedAt() time.Time                    { return t.createdAt }
+func (t *WagerTransaction) ResolvedReferenceID() *string            { return t.resolvedReferenceID }
 
 func (t *WagerTransaction) transitionGuard() error {
 	if t.status.isTerminal() {
@@ -263,7 +268,7 @@ func (t *WagerTransaction) MarkPendingReference() error {
 	return nil
 }
 
-func (t *WagerTransaction) MarkProcessed(resolvedReferenceID TransactionID) error {
+func (t *WagerTransaction) MarkProcessed(resolvedReferenceID string) error {
 	if err := t.transitionGuard(); err != nil {
 		return err
 	}
@@ -289,7 +294,7 @@ func (t *WagerTransaction) MarkRejected(failureCode string) error {
 	}
 
 	t.status = StatusRejected
-	t.failureCode = failureCode
+	t.failureCode = &failureCode
 	t.updatedAt = time.Now().UTC()
 
 	return nil

@@ -35,9 +35,9 @@ func (r *wagerTransactionRepository) Save(ctx context.Context, wagerTransaction 
 	`,
 		wagerTransaction.ID(), wagerTransaction.Kind(), wagerTransaction.Status(), wagerTransaction.WalletID(), wagerTransaction.PlayerID(),
 		wagerTransaction.Money().MinorUnits(), wagerTransaction.Money().Currency(),
-		NullableStr(wagerTransaction.ProviderID()), NullIfEmpty(string(wagerTransaction.ExternalTransactionID())), NullIfEmpty(wagerTransaction.IdempotencyKey()), NullIfEmpty(wagerTransaction.PayloadHash()),
-		NullableStr(wagerTransaction.RoundID()), NullableStr(wagerTransaction.GameID()), NullIfEmpty(wagerTransaction.ReferenceExternalTransactionID()),
-		NullableStr(wagerTransaction.ResolvedReferenceID()), NullIfEmpty(wagerTransaction.FailureCode()),
+		NullableStr(wagerTransaction.ProviderID()), NullableStr(wagerTransaction.ExternalTransactionID()), NullableStr(wagerTransaction.IdempotencyKey()), NullableStr(wagerTransaction.PayloadHash()),
+		NullableStr(wagerTransaction.RoundID()), NullableStr(wagerTransaction.GameID()), NullableStr(wagerTransaction.ReferenceExternalTransactionID()),
+		NullableStr(wagerTransaction.ResolvedReferenceID()), NullableStr(wagerTransaction.FailureCode()),
 		wagerTransaction.CreatedAt(), wagerTransaction.UpdatedAt(),
 	)
 	if err != nil {
@@ -51,7 +51,7 @@ func (r *wagerTransactionRepository) Save(ctx context.Context, wagerTransaction 
 	return nil
 }
 
-func (r *wagerTransactionRepository) FindByID(ctx context.Context, transactionID domain.TransactionID, providerID domain.ProviderID) (*domain.WagerTransaction, error) {
+func (r *wagerTransactionRepository) FindByID(ctx context.Context, transactionID string, providerID string) (*domain.WagerTransaction, error) {
 	exec := executor(ctx, r.pool)
 
 	query := `
@@ -133,74 +133,25 @@ func (r *wagerTransactionRepository) FindByID(ctx context.Context, transactionID
 		return nil, fmt.Errorf("postgres: failure on get balance from database: %w", err)
 	}
 
-	var providerIdStr *domain.ProviderID
-	if providerId != nil {
-		val := domain.ProviderID(*providerId)
-		providerIdStr = &val
-	}
-
-	var roundId *domain.RoundID
-	if roundID != nil {
-		val := domain.RoundID(*roundID)
-		roundId = &val
-	}
-
-	var gameId *domain.GameID
-	if gameID != nil {
-		val := domain.GameID(*gameID)
-		gameId = &val
-	}
-
-	var resolvedReferenceId *domain.TransactionID
-	if resolvedReferenceID != nil {
-		val := domain.TransactionID(*resolvedReferenceID)
-		resolvedReferenceId = &val
-	}
-
-	var referenceExternalTxIDStr string
-	if referenceExternalTxID != nil {
-		referenceExternalTxIDStr = *referenceExternalTxID
-	}
-
-	var externalTransactionIDStr string
-	if externalTransactionID != nil {
-		externalTransactionIDStr = *externalTransactionID
-	}
-
-	var idempotencyKeyStr string
-	if idempotencyKey != nil {
-		idempotencyKeyStr = *idempotencyKey
-	}
-
-	var payloadHashStr string
-	if payloadHash != nil {
-		payloadHashStr = *payloadHash
-	}
-
-	var failureCodeStr string
-	if failureCode != nil {
-		failureCodeStr = *failureCode
-	}
-
-	return domain.RehydrateWagerTransaction(
-		domain.TransactionID(id),
-		domain.WagerKind(kind),
-		domain.WagerStatus(status),
-		domain.WalletID(walletID),
-		domain.PlayerID(playerID),
-		balance,
-		providerIdStr,
-		externalTransactionIDStr,
-		idempotencyKeyStr,
-		payloadHashStr,
-		roundId,
-		gameId,
-		referenceExternalTxIDStr,
-		resolvedReferenceId,
-		failureCodeStr,
-		createdAt,
-		updatedAt,
-	)
+	return domain.RehydrateWagerTransaction(domain.RehydrateWagerTransactionParams{
+		ID:                    id,
+		Kind:                  domain.WagerKind(kind),
+		Status:                domain.WagerStatus(status),
+		WalletID:              walletID,
+		PlayerID:              playerID,
+		Money:                 balance,
+		ProviderID:            providerId,
+		ExternalTransactionID: externalTransactionID,
+		IdempotencyKey:        idempotencyKey,
+		PayloadHash:           payloadHash,
+		RoundID:               roundID,
+		GameID:                gameID,
+		ReferenceExternalTxID: referenceExternalTxID,
+		ResolvedReferenceID:   resolvedReferenceID,
+		FailureCode:           failureCode,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+	})
 }
 
 func (r *wagerTransactionRepository) FindByProvider(ctx context.Context, params app.FindWagerTransactionByProviderParams) (*domain.WagerTransaction, error) {
@@ -285,74 +236,25 @@ func (r *wagerTransactionRepository) FindByProvider(ctx context.Context, params 
 		return nil, fmt.Errorf("postgres: failure on get balance from database: %w", err)
 	}
 
-	var providerId *domain.ProviderID
-	if providerID != nil {
-		val := domain.ProviderID(*providerID)
-		providerId = &val
-	}
-
-	var roundId *domain.RoundID
-	if roundID != nil {
-		val := domain.RoundID(*roundID)
-		roundId = &val
-	}
-
-	var gameId *domain.GameID
-	if gameID != nil {
-		val := domain.GameID(*gameID)
-		gameId = &val
-	}
-
-	var resolvedReferenceId *domain.TransactionID
-	if resolvedReferenceID != nil {
-		val := domain.TransactionID(*resolvedReferenceID)
-		resolvedReferenceId = &val
-	}
-
-	var referenceExternalTxIDStr string
-	if referenceExternalTxID != nil {
-		referenceExternalTxIDStr = *referenceExternalTxID
-	}
-
-	var externalTransactionIDStr string
-	if externalTransactionID != nil {
-		externalTransactionIDStr = *externalTransactionID
-	}
-
-	var idempotencyKeyStr string
-	if idempotencyKey != nil {
-		idempotencyKeyStr = *idempotencyKey
-	}
-
-	var payloadHashStr string
-	if payloadHash != nil {
-		payloadHashStr = *payloadHash
-	}
-
-	var failureCodeStr string
-	if failureCode != nil {
-		failureCodeStr = *failureCode
-	}
-
-	return domain.RehydrateWagerTransaction(
-		domain.TransactionID(id),
-		domain.WagerKind(kind),
-		domain.WagerStatus(status),
-		domain.WalletID(walletID),
-		domain.PlayerID(playerID),
-		domain.Money(balance),
-		providerId,
-		referenceExternalTxIDStr,
-		idempotencyKeyStr,
-		payloadHashStr,
-		roundId,
-		gameId,
-		externalTransactionIDStr,
-		resolvedReferenceId,
-		failureCodeStr,
-		createdAt,
-		updatedAt,
-	)
+	return domain.RehydrateWagerTransaction(domain.RehydrateWagerTransactionParams{
+		ID:                    id,
+		Kind:                  domain.WagerKind(kind),
+		Status:                domain.WagerStatus(status),
+		WalletID:              walletID,
+		PlayerID:              playerID,
+		Money:                 balance,
+		ProviderID:            providerID,
+		ExternalTransactionID: externalTransactionID,
+		IdempotencyKey:        idempotencyKey,
+		PayloadHash:           payloadHash,
+		RoundID:               roundID,
+		GameID:                gameID,
+		ReferenceExternalTxID: referenceExternalTxID,
+		ResolvedReferenceID:   resolvedReferenceID,
+		FailureCode:           failureCode,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+	})
 }
 
 func (r *wagerTransactionRepository) FindByIdempotencyKey(ctx context.Context, idemPotencyKey string) (*domain.WagerTransaction, error) {
@@ -436,72 +338,23 @@ func (r *wagerTransactionRepository) FindByIdempotencyKey(ctx context.Context, i
 		return nil, fmt.Errorf("postgres: failure on get balance from database: %w", err)
 	}
 
-	var providerId *domain.ProviderID
-	if providerID != nil {
-		val := domain.ProviderID(*providerID)
-		providerId = &val
-	}
-
-	var roundId *domain.RoundID
-	if roundID != nil {
-		val := domain.RoundID(*roundID)
-		roundId = &val
-	}
-
-	var gameId *domain.GameID
-	if gameID != nil {
-		val := domain.GameID(*gameID)
-		gameId = &val
-	}
-
-	var resolvedReferenceId *domain.TransactionID
-	if resolvedReferenceID != nil {
-		val := domain.TransactionID(*resolvedReferenceID)
-		resolvedReferenceId = &val
-	}
-
-	var referenceExternalTxIDStr string
-	if referenceExternalTxID != nil {
-		referenceExternalTxIDStr = *referenceExternalTxID
-	}
-
-	var externalTransactionIDStr string
-	if externalTransactionID != nil {
-		externalTransactionIDStr = *externalTransactionID
-	}
-
-	var idempotencyKeyStr string
-	if idempotencyKey != nil {
-		idempotencyKeyStr = *idempotencyKey
-	}
-
-	var payloadHashStr string
-	if payloadHash != nil {
-		payloadHashStr = *payloadHash
-	}
-
-	var failureCodeStr string
-	if failureCode != nil {
-		failureCodeStr = *failureCode
-	}
-
-	return domain.RehydrateWagerTransaction(
-		domain.TransactionID(id),
-		domain.WagerKind(kind),
-		domain.WagerStatus(status),
-		domain.WalletID(walletID),
-		domain.PlayerID(playerID),
-		domain.Money(balance),
-		providerId,
-		referenceExternalTxIDStr,
-		idempotencyKeyStr,
-		payloadHashStr,
-		roundId,
-		gameId,
-		externalTransactionIDStr,
-		resolvedReferenceId,
-		failureCodeStr,
-		createdAt,
-		updatedAt,
-	)
+	return domain.RehydrateWagerTransaction(domain.RehydrateWagerTransactionParams{
+		ID:                    id,
+		Kind:                  domain.WagerKind(kind),
+		Status:                domain.WagerStatus(status),
+		WalletID:              walletID,
+		PlayerID:              playerID,
+		Money:                 balance,
+		ProviderID:            providerID,
+		ExternalTransactionID: externalTransactionID,
+		IdempotencyKey:        idempotencyKey,
+		PayloadHash:           payloadHash,
+		RoundID:               roundID,
+		GameID:                gameID,
+		ReferenceExternalTxID: referenceExternalTxID,
+		ResolvedReferenceID:   resolvedReferenceID,
+		FailureCode:           failureCode,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
+	})
 }

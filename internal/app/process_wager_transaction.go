@@ -74,7 +74,7 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 	}
 
 	if existing != nil {
-		if existing.PayloadHash() != payloadHash {
+		if existing.PayloadHash() != nil && *existing.PayloadHash() != payloadHash {
 			return nil, ErrIdempotencyKeyConflict
 		}
 		return uc.resultFromExisting(ctx, existing)
@@ -83,10 +83,10 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 	var result *ProcessWagerTransactionResult
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		txID := domain.TransactionID(uc.ids.NewID().String())
+		txID := uc.ids.NewID().String()
 
 		err := uc.uow.Execute(ctx, func(ctx context.Context) error {
-			wallet, err := uc.walletRepo.FindByID(ctx, domain.WalletID(cmd.WalletID))
+			wallet, err := uc.walletRepo.FindByID(ctx, cmd.WalletID)
 			if err != nil {
 				return err
 			}
@@ -98,12 +98,12 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 				Kind:                  cmd.Kind,
 				WalletID:              wallet.ID(),
 				PlayerID:              wallet.PlayerID(),
-				ProviderID:            (*domain.ProviderID)(&cmd.ProviderID),
+				ProviderID:            cmd.ProviderID,
 				ExternalTransactionID: cmd.ExternalTransactionID,
 				IdempotencyKey:        cmd.IdempotencyKey,
 				PayloadHash:           cmd.IdempotencyKey,
-				RoundID:               (*domain.RoundID)(&cmd.RoundID),
-				GameID:                (*domain.GameID)(&cmd.GameID),
+				RoundID:               cmd.RoundID,
+				GameID:                cmd.GameID,
 				Money:                 cmd.Money,
 			})
 
@@ -130,15 +130,15 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 				return err
 			}
 
-			entry, err := domain.NewWalletLedgerEntry(
-				domain.LedgerEntryID(uc.ids.NewID().String()),
-				wallet.ID(),
-				txID,
-				domain.DirectionDebit,
-				cmd.Money,
-				movement.BalanceBefore,
-				movement.BalanceAfter,
-			)
+			entry, err := domain.NewWalletLedgerEntry(domain.NewWalletLedgerEntryParams{
+				ID:            uc.ids.NewID().String(),
+				WalletID:      wallet.ID(),
+				TransactionID: txID,
+				Amount:        cmd.Money,
+				Direction:     domain.DirectionDebit,
+				BalanceBefore: movement.BalanceBefore,
+				BalanceAfter:  movement.BalanceAfter,
+			})
 
 			if err != nil {
 				return err
@@ -177,7 +177,7 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 			if findErr != nil {
 				return nil, fmt.Errorf("process wager transaction: resolve race loser: %w", findErr)
 			}
-			if existing.PayloadHash() != payloadHash {
+			if existing.PayloadHash() != nil && *existing.PayloadHash() != payloadHash {
 				return nil, ErrIdempotencyKeyConflict
 			}
 			return uc.resultFromExisting(ctx, existing)
@@ -216,7 +216,7 @@ func (uc *ProcessWagerTransaction) reject(ctx context.Context, wagerTx *domain.W
 	}
 
 	*result = &ProcessWagerTransactionResult{
-		TransactionID: string(wagerTx.ID()),
+		TransactionID: wagerTx.ID(),
 		Status:        string(wagerTx.Status()),
 		Balance:       wallet.Balance(),
 	}
@@ -227,9 +227,9 @@ func (uc *ProcessWagerTransaction) publishProcessedEvents(ctx context.Context, w
 	correlationID := uc.ids.NewID().String()
 
 	processedData := WagerTransactionProcessedData{
-		TransactionID: string(wagerTx.ID()),
+		WalletID:      wallet.ID(),
+		TransactionID: wagerTx.ID(),
 		Kind:          string(wagerTx.Kind()),
-		WalletID:      string(wallet.ID()),
 	}
 	processedData.Money.Amount = wagerTx.Money().String()
 	processedData.Money.Currency = string(wagerTx.Money().Currency())
@@ -249,8 +249,8 @@ func (uc *ProcessWagerTransaction) publishProcessedEvents(ctx context.Context, w
 	}
 
 	balanceData := WalletBalanceChangedData{
-		WalletID:      string(wallet.ID()),
-		TransactionID: string(wagerTx.ID()),
+		WalletID:      wallet.ID(),
+		TransactionID: wagerTx.ID(),
 		Direction:     string(domain.DirectionDebit),
 		BalanceBefore: entry.BalanceBefore().String(),
 		BalanceAfter:  entry.BalanceAfter().String(),
@@ -290,7 +290,7 @@ func (uc *ProcessWagerTransaction) resultFromExisting(ctx context.Context, exist
 	}
 
 	return &ProcessWagerTransactionResult{
-		TransactionID:    string(existing.ID()),
+		TransactionID:    existing.ID(),
 		Status:           string(existing.Status()),
 		Balance:          balance,
 		IdempotentReplay: true,

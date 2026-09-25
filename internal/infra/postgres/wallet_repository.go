@@ -38,7 +38,7 @@ func (r *walletRepository) Create(ctx context.Context, wallet *domain.Wallet) er
 	return nil
 }
 
-func (r *walletRepository) FindByID(ctx context.Context, walletID domain.WalletID) (*domain.Wallet, error) {
+func (r *walletRepository) FindByID(ctx context.Context, walletID string) (*domain.Wallet, error) {
 	exec := executor(ctx, r.pool)
 
 	row := exec.QueryRow(ctx, `
@@ -66,14 +66,14 @@ func (r *walletRepository) FindByID(ctx context.Context, walletID domain.WalletI
 		return nil, fmt.Errorf("postgres: failure on get balance from database: %w", err)
 	}
 
-	return domain.RehydrateWallet(
-		walletID,
-		domain.PlayerID(playerId),
-		balance,
-		version,
-		createdAt,
-		updatedAt,
-	)
+	return domain.RehydrateWallet(domain.RehydrateWalletParams{
+		WalletID:  walletId,
+		PlayerID:  playerId,
+		Balance:   balance,
+		Version:   version,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	})
 }
 
 func (r *walletRepository) Update(ctx context.Context, wallet *domain.Wallet, prevVersion int64) error {

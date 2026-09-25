@@ -130,16 +130,16 @@ func (r *walletLedgerRepository) ListWalletLedger(ctx context.Context, params ap
 			return nil, fmt.Errorf("postgres: failure on get balance after from database: %w", err)
 		}
 
-		ledger, err := domain.RehydrateWalletLedgerEntry(
-			domain.LedgerEntryID(id),
-			domain.WalletID(walletID),
-			domain.TransactionID(transactionID),
-			domain.Direction(direction),
-			amount,
-			balanceBefore,
-			balanceAfter,
-			createdAt,
-		)
+		ledger, err := domain.RehydrateWalletLedgerEntry(domain.RehydrateWalletLedgerEntryParams{
+			ID:            id,
+			WalletID:      walletID,
+			TransactionID: transactionID,
+			Direction:     domain.Direction(direction),
+			Amount:        amount,
+			BalanceBefore: balanceBefore,
+			BalanceAfter:  balanceAfter,
+			CreatedAt:     createdAt,
+		})
 
 		if err != nil {
 			return nil, fmt.Errorf("postgres: failure on rehydrate ledger entry: %w", err)
@@ -176,7 +176,7 @@ func (r *walletLedgerRepository) ListWalletLedger(ctx context.Context, params ap
 	}, nil
 }
 
-func (r *walletLedgerRepository) FindByTransactionID(ctx context.Context, transactionID domain.TransactionID) (*domain.WalletLedgerEntry, error) {
+func (r *walletLedgerRepository) FindByTransactionID(ctx context.Context, transactionID string) (*domain.WalletLedgerEntry, error) {
 	exec := executor(ctx, r.pool)
 
 	query := `
@@ -237,14 +237,14 @@ func (r *walletLedgerRepository) FindByTransactionID(ctx context.Context, transa
 		return nil, fmt.Errorf("postgres: failure on get balance after from database: %w", err)
 	}
 
-	return domain.RehydrateWalletLedgerEntry(
-		domain.LedgerEntryID(id),
-		domain.WalletID(walletID),
-		domain.TransactionID(transactionId),
-		domain.Direction(direction),
-		amount,
-		balanceBefore,
-		balanceAfter,
-		createdAt,
-	)
+	return domain.RehydrateWalletLedgerEntry(domain.RehydrateWalletLedgerEntryParams{
+		ID:            id,
+		WalletID:      walletID,
+		TransactionID: transactionID,
+		Direction:     domain.Direction(direction),
+		Amount:        amount,
+		BalanceBefore: balanceBefore,
+		BalanceAfter:  balanceAfter,
+		CreatedAt:     createdAt,
+	})
 }
