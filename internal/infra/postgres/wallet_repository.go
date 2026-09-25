@@ -76,6 +76,26 @@ func (r *walletRepository) FindByID(ctx context.Context, walletID domain.WalletI
 	)
 }
 
+func (r *walletRepository) Update(ctx context.Context, wallet *domain.Wallet, prevVersion int64) error {
+	exec := executor(ctx, r.pool)
+
+	tag, err := exec.Exec(ctx, `
+		UPDATE wallets
+		SET balance_minor_units = $1, version = $2, updated_at = $3
+		WHERE id = $4 AND version = $5
+	`, wallet.Balance().MinorUnits(), wallet.Version(), wallet.UpdatedAt(), wallet.ID(), prevVersion,
+	)
+	if err != nil {
+		return fmt.Errorf("postgres: error on updating wallet: %w", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		return app.ErrWalletConcurrentUpdate
+	}
+
+	return nil
+}
+
 func isUniqueViolation(err error, constraintName string) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {

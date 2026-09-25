@@ -58,3 +58,10 @@ type WalletBalanceChangedData struct {
 	BalanceAfter  string `json:"balanceAfter"`
 	WalletVersion int64  `json:"walletVersion"`
 }
+
+type WagerTransactionRejectedData struct {
+	TransactionID string `json:"transactionId"`
+	Kind          string `json:"kind"`
+	WalletID      string `json:"walletId"`
+	FailureCode   string `json:"failureCode"`
+}

@@ -9,6 +9,7 @@ import (
 
 type GetWagerTransactionByIDCommand struct {
 	TransactionID domain.TransactionID
+	ProviderID    domain.ProviderID
 }
 
 type GetWagerTransaction struct {
@@ -39,8 +40,8 @@ func NewGetWagerTransaction(repo WagerTransactionRepository) *GetWagerTransactio
 	return &GetWagerTransaction{repo: repo}
 }
 
-func (uc *GetWagerTransaction) Execute(ctx context.Context, command GetWagerTransactionByIDCommand) (*WagerTransactionResult, error) {
-	transaction, err := uc.repo.FindByID(ctx, command.TransactionID)
+func (uc *GetWagerTransaction) Execute(ctx context.Context, cmd GetWagerTransactionByIDCommand) (*WagerTransactionResult, error) {
+	transaction, err := uc.repo.FindByID(ctx, cmd.TransactionID, cmd.ProviderID)
 	if err != nil {
 		return nil, err
 	}

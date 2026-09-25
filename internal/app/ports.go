@@ -9,8 +9,12 @@ import (
 )
 
 var (
-	ErrWalletNotFound      = errors.New("app: wallet not found")
-	ErrWalletAlreadyExists = errors.New("app: already exists wallet to this player and currency")
+	ErrWalletNotFound         = errors.New("app: wallet not found")
+	ErrWalletAlreadyExists    = errors.New("app: already exists wallet to this player and currency")
+	ErrWalletConcurrentUpdate = errors.New("app: wallet is being updated concurrently")
+	ErrIdempotencyKeyConflict = errors.New("app: idempotency key conflict")
+	ErrWalletLedgerNotFound   = errors.New("app: wallet ledger not found")
+	ErrIdempotencyKeyRaceLost = errors.New("app: idempotency key race lost")
 )
 
 type WalletLedgerCursor struct {
@@ -42,17 +46,20 @@ type UnitOfWork interface {
 type WalletRepository interface {
 	Create(ctx context.Context, wallet *domain.Wallet) error
 	FindByID(ctx context.Context, walletID domain.WalletID) (*domain.Wallet, error)
+	Update(ctx context.Context, wallet *domain.Wallet, prevVersion int64) error
 }
 
 type WagerTransactionRepository interface {
 	Save(ctx context.Context, wagerTransaction *domain.WagerTransaction) error
-	FindByID(ctx context.Context, transactionID domain.TransactionID) (*domain.WagerTransaction, error)
+	FindByID(ctx context.Context, transactionID domain.TransactionID, providerID domain.ProviderID) (*domain.WagerTransaction, error)
 	FindByProvider(ctx context.Context, params FindWagerTransactionByProviderParams) (*domain.WagerTransaction, error)
+	FindByIdempotencyKey(ctx context.Context, idempotencyKey string) (*domain.WagerTransaction, error)
 }
 
 type WalletLedgerRepository interface {
 	Append(ctx context.Context, ledgerEntry *domain.WalletLedgerEntry) error
 	ListWalletLedger(ctx context.Context, params ListWalletLedgerParams) (*WalletLedgerPagination, error)
+	FindByTransactionID(ctx context.Context, transactionID domain.TransactionID) (*domain.WalletLedgerEntry, error)
 }
 
 type OutboxRepository interface {

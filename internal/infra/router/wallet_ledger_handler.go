@@ -5,16 +5,22 @@ import (
 	"strconv"
 
 	"github.com/cleidison-barradas/betwallet.api/internal/app"
+	"github.com/cleidison-barradas/betwallet.api/internal/infra/auth"
 	"github.com/cleidison-barradas/betwallet.api/internal/utils"
 )
 
 type walletLedgerHandler struct {
 	getWalletLedgerByWalletID *app.GetWalletLedgerByWalletID
+	auth                      *auth.Middleware
 }
 
-func NewWalletLedgerHandler(getWalletLedgerByWalletID *app.GetWalletLedgerByWalletID) *walletLedgerHandler {
+func NewWalletLedgerHandler(
+	getWalletLedgerByWalletID *app.GetWalletLedgerByWalletID,
+	auth *auth.Middleware,
+) *walletLedgerHandler {
 	return &walletLedgerHandler{
 		getWalletLedgerByWalletID: getWalletLedgerByWalletID,
+		auth:                      auth,
 	}
 }
 func (h *walletLedgerHandler) handleGetWalletLedgerByWalletID(w http.ResponseWriter, r *http.Request) {
@@ -41,5 +47,5 @@ func (h *walletLedgerHandler) handleGetWalletLedgerByWalletID(w http.ResponseWri
 }
 
 func (h *walletLedgerHandler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /wallets/{walletId}/ledgers", h.handleGetWalletLedgerByWalletID)
+	mux.Handle("GET /wallets/{walletId}/ledgers", h.auth.RequireAuth(h.auth.RequireInternal(http.HandlerFunc(h.handleGetWalletLedgerByWalletID))))
 }

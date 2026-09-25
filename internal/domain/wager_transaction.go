@@ -9,7 +9,8 @@ import (
 var (
 	ErrWagerInvalidTransactionState = errors.New("wager_transaction: invalid state")
 	ErrWagerInvalidTransactionType  = errors.New("wager_transaction: invalid transaction type")
-	ErrWagerTransctionNotFound      = errors.New("wager_transaction: transaction not found")
+	ErrWagerTransactionNotFound     = errors.New("wager_transaction: transaction not found")
+	ErrWagerIdempotencyKeyMissing   = errors.New("wager_transaction: idempotency key is missing")
 )
 
 type WagerKind string

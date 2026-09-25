@@ -55,6 +55,10 @@ func (e *InboxEntry) PayloadHash() string   { return e.payloadHash }
 func (e *InboxEntry) ReceivedAt() time.Time { return e.receivedAt }
 func (e *InboxEntry) IsCompleted() bool     { return e.completedAt != nil }
 
+func (e *InboxEntry) MatchesPayload(payloadHash string) bool {
+	return e.payloadHash == payloadHash
+}
+
 func (e *InboxEntry) MarkCompleted() error {
 	if e.IsCompleted() {
 		return fmt.Errorf("%w: already completed", ErrInvalidInboxEntry)

@@ -6,18 +6,25 @@ import (
 
 	"github.com/cleidison-barradas/betwallet.api/internal/app"
 	"github.com/cleidison-barradas/betwallet.api/internal/domain"
+	"github.com/cleidison-barradas/betwallet.api/internal/infra/auth"
 	"github.com/cleidison-barradas/betwallet.api/internal/utils"
 )
 
 type walletHandler struct {
 	openWallet          *app.OpenWallet
 	getWalletByWalletID *app.GetWalletByWalletID
+	auth                *auth.Middleware
 }
 
-func NewWalletHandler(openWallet *app.OpenWallet, getWalletByWalletID *app.GetWalletByWalletID) *walletHandler {
+func NewWalletHandler(
+	openWallet *app.OpenWallet,
+	getWalletByWalletID *app.GetWalletByWalletID,
+	auth *auth.Middleware,
+) *walletHandler {
 	return &walletHandler{
 		openWallet:          openWallet,
 		getWalletByWalletID: getWalletByWalletID,
+		auth:                auth,
 	}
 }
 
@@ -85,6 +92,6 @@ func (h *walletHandler) handleGetWalletByWalletID(w http.ResponseWriter, r *http
 }
 
 func (h *walletHandler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("POST /wallets", h.handleOpenWallet)
-	mux.HandleFunc("GET /wallets/{walletId}", h.handleGetWalletByWalletID)
+	mux.Handle("POST /wallets", h.auth.RequireAuth(h.auth.RequireInternal(http.HandlerFunc(h.handleOpenWallet))))
+	mux.Handle("GET /wallets/{walletId}", h.auth.RequireAuth(h.auth.RequireInternal(http.HandlerFunc(h.handleGetWalletByWalletID))))
 }
