@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	ErrWagerInvalidTransactionState = errors.New("wager_transaction: invalid state")
-	ErrWagerInvalidTransactionType  = errors.New("wager_transaction: invalid transaction type")
-	ErrWagerTransactionNotFound     = errors.New("wager_transaction: transaction not found")
-	ErrWagerIdempotencyKeyMissing   = errors.New("wager_transaction: idempotency key is missing")
+	ErrWagerMissingRequiredFields       = errors.New("wager_missing_required_fields")
+	ErrWagerInvalidTransactionType      = errors.New("wager_invalid_transaction_type")
+	ErrWagerAmountZeroOrNegativeOnLoose = errors.New("wager_amount_zero_or_negative_on_loose")
+	ErrWagerInvalidTransactionStatus    = errors.New("wager_invalid_transaction_status")
+	ErrWagerTransactionNotFound         = errors.New("wager_transaction_not_found")
 )
 
 type WagerKind string
@@ -97,15 +98,15 @@ func NewExternalWagerTransaction(input ExternalWagerInput) (*WagerTransaction, e
 	}
 
 	if input.ID == "" || input.WalletID == "" || input.PlayerID == "" {
-		return nil, fmt.Errorf("%w: id, wallet id and player id are required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: id, wallet id and player id are required", ErrWagerMissingRequiredFields)
 	}
 
 	if input.ProviderID == "" || input.ExternalTransactionID == "" || input.IdempotencyKey == "" {
-		return nil, fmt.Errorf("%w: provider id, external transaction id and idempotency key are required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: provider id, external transaction id and idempotency key are required", ErrWagerMissingRequiredFields)
 	}
 
 	if input.RoundID == "" || input.GameID == "" {
-		return nil, fmt.Errorf("%w: round id and game id are required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: round id and game id are required", ErrWagerMissingRequiredFields)
 	}
 
 	if err := validateMoneyForKind(input.Kind, input.Money); err != nil {
@@ -115,11 +116,11 @@ func NewExternalWagerTransaction(input ExternalWagerInput) (*WagerTransaction, e
 	hasReference := input.ReferenceExternalTransactionID != ""
 
 	if input.Kind.requiresReference() && !hasReference {
-		return nil, fmt.Errorf("%w: reference external transaction id is required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: reference external transaction id is required", ErrWagerMissingRequiredFields)
 	}
 
 	if input.Kind.requiresReference() && hasReference {
-		return nil, fmt.Errorf("%w: reference external transaction id is required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: reference external transaction id is required", ErrWagerMissingRequiredFields)
 	}
 
 	now := time.Now().UTC()
@@ -147,13 +148,13 @@ func NewExternalWagerTransaction(input ExternalWagerInput) (*WagerTransaction, e
 func validateMoneyForKind(kind WagerKind, money Money) error {
 	if kind == KindLoss {
 		if !money.IsZero() {
-			return fmt.Errorf("%w: money must be zero", ErrWagerInvalidTransactionState)
+			return fmt.Errorf("%w: money must be zero", ErrWagerAmountZeroOrNegativeOnLoose)
 		}
 		return nil
 	}
 
 	if !money.IsPositive() {
-		return fmt.Errorf("%w: money must be positive", ErrWagerInvalidTransactionState)
+		return fmt.Errorf("%w: money must be positive", ErrWagerAmountZeroOrNegativeOnLoose)
 	}
 	return nil
 }
@@ -168,11 +169,11 @@ type NewOpeningTransactionParams struct {
 func NewOpeningTransaction(p NewOpeningTransactionParams) (*WagerTransaction, error) {
 
 	if p.TransactionID == "" || p.WalletID == "" || p.PlayerID == "" {
-		return nil, fmt.Errorf(" %w: transactionID, walletID and playerID are required", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf(" %w: transactionID, walletID and playerID are required", ErrWagerMissingRequiredFields)
 	}
 
 	if p.Money.IsNegative() {
-		return nil, fmt.Errorf("%w: money must be positive", ErrWagerInvalidTransactionState)
+		return nil, fmt.Errorf("%w: money must be positive", ErrWagerMissingRequiredFields)
 	}
 
 	now := time.Now().UTC()
@@ -252,14 +253,14 @@ func (t *WagerTransaction) ResolvedReferenceID() *string            { return t.r
 
 func (t *WagerTransaction) transitionGuard() error {
 	if t.status.isTerminal() {
-		return fmt.Errorf("%w: The transaction is already in a terminal state.", ErrWagerInvalidTransactionState)
+		return fmt.Errorf("%w: The transaction is already in a terminal state.", ErrWagerInvalidTransactionStatus)
 	}
 	return nil
 }
 
 func (t *WagerTransaction) MarkPendingReference() error {
 	if t.status != StatusPending {
-		return fmt.Errorf("%w: It is not possible to process from %s", ErrWagerInvalidTransactionState, t.status)
+		return fmt.Errorf("%w: It is not possible to process from %s", ErrWagerInvalidTransactionStatus, t.status)
 	}
 
 	t.status = StatusPendingReference
@@ -274,7 +275,7 @@ func (t *WagerTransaction) MarkProcessed(resolvedReferenceID string) error {
 	}
 
 	if t.status != StatusPending && t.status != StatusPendingReference {
-		return fmt.Errorf("%w: It is not possible to process from %s", ErrWagerInvalidTransactionState, t.status)
+		return fmt.Errorf("%w: It is not possible to process from %s", ErrWagerInvalidTransactionStatus, t.status)
 	}
 
 	t.status = StatusProcessed
@@ -290,7 +291,7 @@ func (t *WagerTransaction) MarkRejected(failureCode string) error {
 	}
 
 	if failureCode == "" {
-		return fmt.Errorf("%w: failure code is required", ErrWagerInvalidTransactionState)
+		return fmt.Errorf("%w: failure code is required", ErrWagerMissingRequiredFields)
 	}
 
 	t.status = StatusRejected

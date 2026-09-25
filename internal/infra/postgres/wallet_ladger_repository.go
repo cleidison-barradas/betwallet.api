@@ -165,7 +165,7 @@ func (r *walletLedgerRepository) ListWalletLedger(ctx context.Context, params ap
 
 		nextCursor = &app.WalletLedgerCursor{
 			CreatedAt: lastEntry.CreatedAt(),
-			ID:        string(lastEntry.ID()),
+			ID:        lastEntry.ID(),
 		}
 	}
 
@@ -218,7 +218,7 @@ func (r *walletLedgerRepository) FindByTransactionID(ctx context.Context, transa
 		&createdAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, app.ErrWalletLedgerNotFound
+			return nil, app.ErrLedgerNotFound
 		}
 	}
 

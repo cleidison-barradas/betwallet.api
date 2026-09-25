@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	ErrWalletNotEnoughBalance = fmt.Errorf("insufficient balance")
-	ErrWalletStateInvalid     = fmt.Errorf("invalid wallet state")
+	ErrWalletVersionInvalid        = fmt.Errorf("invalid_wallet_version")
+	ErrWalletBalanceNegative       = fmt.Errorf("wallet_balance_is_negative")
+	ErrWalletMissingRequiredFields = fmt.Errorf("wallet_is_missing_required_fields")
 )
 
 type Wallet struct {
@@ -37,11 +38,11 @@ type RehydrateWalletParams struct {
 func NewWallet(p NewWalletParams) (*Wallet, error) {
 
 	if p.WalletID == "" || p.PlayerID == "" {
-		return nil, fmt.Errorf("%w: walletID and playerID are required", ErrWalletStateInvalid)
+		return nil, fmt.Errorf("%w: walletID and playerID are required", ErrWalletMissingRequiredFields)
 	}
 
 	if p.InitialBalance.IsNegative() {
-		return nil, fmt.Errorf("%w: insufficient balance", ErrWalletNotEnoughBalance)
+		return nil, fmt.Errorf("%w: initial balance must be positive", ErrWalletBalanceNegative)
 	}
 
 	now := time.Now().UTC()
@@ -59,11 +60,11 @@ func NewWallet(p NewWalletParams) (*Wallet, error) {
 func RehydrateWallet(p RehydrateWalletParams) (*Wallet, error) {
 
 	if p.Version < 1 {
-		return nil, fmt.Errorf("%w: invalid version (%d)", ErrWalletStateInvalid, p.Version)
+		return nil, fmt.Errorf("%w: invalid version (%d)", ErrWalletVersionInvalid, p.Version)
 	}
 
 	if p.Balance.IsNegative() {
-		return nil, fmt.Errorf("%w: insufficient balance", ErrWalletNotEnoughBalance)
+		return nil, fmt.Errorf("%w: balance must be positive", ErrWalletBalanceNegative)
 	}
 
 	return &Wallet{
@@ -91,7 +92,7 @@ func (w *Wallet) UpdatedAt() time.Time { return w.updatedAt }
 
 func (w *Wallet) Debit(amount Money) (Movement, error) {
 	if !amount.IsPositive() {
-		return Movement{}, fmt.Errorf("%w: amount must be positive", ErrWalletNotEnoughBalance)
+		return Movement{}, fmt.Errorf("%w: amount must be positive", ErrWalletBalanceNegative)
 	}
 
 	if amount.Currency() != w.balance.Currency() {
@@ -104,7 +105,7 @@ func (w *Wallet) Debit(amount Money) (Movement, error) {
 	}
 
 	if newBalance.IsNegative() {
-		return Movement{}, ErrWalletNotEnoughBalance
+		return Movement{}, ErrWalletBalanceNegative
 	}
 
 	before := w.balance
@@ -119,7 +120,7 @@ func (w *Wallet) Debit(amount Money) (Movement, error) {
 }
 func (w *Wallet) Credit(amount Money) (Movement, error) {
 	if !amount.IsPositive() {
-		return Movement{}, fmt.Errorf("%w: amount must be positive", ErrWalletNotEnoughBalance)
+		return Movement{}, fmt.Errorf("%w: amount must be positive", ErrWalletBalanceNegative)
 	}
 
 	if amount.Currency() != w.balance.Currency() {

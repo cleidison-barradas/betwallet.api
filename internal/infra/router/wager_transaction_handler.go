@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/cleidison-barradas/betwallet.api/internal/app"
@@ -59,7 +60,7 @@ func (h *wagerTransactionHandler) handleGetWagerTransaction(w http.ResponseWrite
 	})
 
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 
@@ -76,7 +77,7 @@ func (h *wagerTransactionHandler) handleGetWagerTransactionByProvider(w http.Res
 	})
 
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 
@@ -88,14 +89,14 @@ func (h *wagerTransactionHandler) handleProcessWagerTransaction(w http.ResponseW
 	providerID := auth.ProviderIDFromContext(r.Context())
 
 	if idempotenceKey == "" {
-		utils.Error(w, r, http.StatusBadRequest, domain.ErrWagerIdempotencyKeyMissing)
+		utils.Error(w, r, errors.New("missing_Idempotence-Key_header"))
 		return
 	}
 
 	var body processWagerTransactionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 
@@ -111,7 +112,7 @@ func (h *wagerTransactionHandler) handleProcessWagerTransaction(w http.ResponseW
 		Money:                 body.Money,
 	})
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 

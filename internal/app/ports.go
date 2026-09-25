@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	ErrWalletNotFound         = errors.New("app: wallet not found")
-	ErrWalletAlreadyExists    = errors.New("app: already exists wallet to this player and currency")
-	ErrWalletConcurrentUpdate = errors.New("app: wallet is being updated concurrently")
-	ErrIdempotencyKeyConflict = errors.New("app: idempotency key conflict")
-	ErrWalletLedgerNotFound   = errors.New("app: wallet ledger not found")
-	ErrIdempotencyKeyRaceLost = errors.New("app: idempotency key race lost")
+	ErrWalletNotFound         = errors.New("app_wallet_not_found")
+	ErrWalletAlreadyExists    = errors.New("app_already_exists_wallet_to_this_player_and_currency")
+	ErrWalletConcurrentUpdate = errors.New("app_wallet_is_being_updated_concurrently")
+	ErrIdempotencyKeyConflict = errors.New("app_idempotency_key_conflict")
+	ErrLedgerNotFound         = errors.New("app_ledger_not_found")
+	ErrIdempotencyKeyRaceLost = errors.New("app_idempotency_key_race_lost")
 )
 
 type WalletLedgerCursor struct {

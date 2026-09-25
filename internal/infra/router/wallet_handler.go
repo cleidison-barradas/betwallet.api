@@ -44,12 +44,12 @@ func (h *walletHandler) handleOpenWallet(w http.ResponseWriter, r *http.Request)
 	var body openWalletRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 
 	if body.InitialBalance.Currency() == "" {
-		utils.Error(w, r, http.StatusBadRequest, domain.ErrInvalidCurrency)
+		utils.Error(w, r, domain.ErrInvalidCurrency)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *walletHandler) handleOpenWallet(w http.ResponseWriter, r *http.Request)
 	})
 
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *walletHandler) handleGetWalletByWalletID(w http.ResponseWriter, r *http
 	})
 
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 

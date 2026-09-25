@@ -6,7 +6,12 @@ import (
 	"time"
 )
 
-var ErrInvalidWalletLedgerEntry = errors.New("wallet_ledger_entry: invalid wallet ledger entry")
+var (
+	ErrLedgerMissingRequiredFields = errors.New("ledger_missing_required_fields")
+	ErrLedgerInvalidDirection      = errors.New("ledger_invalid_direction")
+	ErrLedgerNegativeAmount        = errors.New("ledger_negative_amount")
+	ErrLedgerInvalidBalance        = errors.New("ledger_invalid_balance")
+)
 
 type Direction string
 
@@ -43,29 +48,29 @@ type NewWalletLedgerEntryParams struct {
 func NewWalletLedgerEntry(p NewWalletLedgerEntryParams) (*WalletLedgerEntry, error) {
 
 	if p.ID == "" || p.WalletID == "" || p.TransactionID == "" {
-		return nil, fmt.Errorf("%w: id, walletID and transactionID are required", ErrInvalidWalletLedgerEntry)
+		return nil, fmt.Errorf("%w: id, walletID and transactionID are required", ErrLedgerMissingRequiredFields)
 	}
 
 	if !p.Direction.valid() {
-		return nil, fmt.Errorf("%w: invalid direction %s", ErrInvalidWalletLedgerEntry, p.Direction)
+		return nil, fmt.Errorf("%w: invalid direction %s", ErrLedgerInvalidDirection, p.Direction)
 	}
 
 	if !p.Amount.IsPositive() {
-		return nil, fmt.Errorf("%w: amount must be positive", ErrInvalidWalletLedgerEntry)
+		return nil, fmt.Errorf("%w: amount must be positive", ErrLedgerNegativeAmount)
 	}
 
 	expectedAfter, err := applyDirection(p.Direction, p.BalanceBefore, p.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidWalletLedgerEntry, err)
+		return nil, fmt.Errorf("occurred error applying direction: %v", err)
 	}
 
 	cmp, err := expectedAfter.Cmp(p.BalanceAfter)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidWalletLedgerEntry, err)
+		return nil, fmt.Errorf("occurred error comparing balances: %v", err)
 	}
 
 	if cmp != 0 {
-		return nil, fmt.Errorf("%w: expected balance after %s, got %s", ErrInvalidWalletLedgerEntry, expectedAfter.String(), p.BalanceAfter.String())
+		return nil, fmt.Errorf("%w: expected balance after %s, got %s", ErrLedgerInvalidBalance, expectedAfter.String(), p.BalanceAfter.String())
 	}
 
 	return &WalletLedgerEntry{

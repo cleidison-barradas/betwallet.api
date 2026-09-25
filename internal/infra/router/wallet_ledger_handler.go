@@ -39,7 +39,7 @@ func (h *walletLedgerHandler) handleGetWalletLedgerByWalletID(w http.ResponseWri
 	})
 
 	if err != nil {
-		utils.Error(w, r, http.StatusBadRequest, err)
+		utils.Error(w, r, err)
 		return
 	}
 

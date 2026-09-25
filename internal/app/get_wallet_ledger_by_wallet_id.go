@@ -30,7 +30,7 @@ type WalletLedgerEntryResponse struct {
 
 type WalletLedgerResponse struct {
 	Data       []WalletLedgerEntryResponse `json:"data"`
-	NextCursor string                      `json:"next_cursor,omitempty"`
+	NextCursor *string                     `json:"next_cursor,omitempty"`
 	HasNext    bool                        `json:"has_next"`
 }
 
@@ -40,9 +40,9 @@ type GetWalletLedgerByWalletID struct {
 
 func NewWalletLedgerEntryResponse(e domain.WalletLedgerEntry) WalletLedgerEntryResponse {
 	return WalletLedgerEntryResponse{
-		ID:            string(e.ID()),
-		WalletID:      string(e.WalletID()),
-		TransactionID: string(e.TransactionID()),
+		ID:            e.ID(),
+		WalletID:      e.WalletID(),
+		TransactionID: e.TransactionID(),
 		Direction:     string(e.Direction()),
 		Amount:        e.Amount().MinorUnits(),
 		Currency:      string(e.Amount().Currency()),
@@ -88,7 +88,7 @@ func (uc *GetWalletLedgerByWalletID) Execute(ctx context.Context, cmd GetWalletL
 	return &WalletLedgerResponse{
 		Data:       response,
 		HasNext:    result.HasNext,
-		NextCursor: nextEncodedCursor,
+		NextCursor: &nextEncodedCursor,
 	}, nil
 }
 
@@ -112,6 +112,11 @@ func decodeCursor(value string) (*WalletLedgerCursor, error) {
 }
 
 func encodeCursor(cursor *WalletLedgerCursor) (string, error) {
+
+	if cursor == nil {
+		return "", nil
+	}
+
 	data, err := json.Marshal(cursor)
 	if err != nil {
 		return "", err

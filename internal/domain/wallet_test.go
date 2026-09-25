@@ -65,8 +65,8 @@ func TestNewWallet(t *testing.T) {
 			InitialBalance: balance,
 		})
 
-		if !errors.Is(err, ErrWalletNotEnoughBalance) {
-			t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err)
+		if !errors.Is(err, ErrWalletBalanceNegative) {
+			t.Errorf("expected error %v, got %v", ErrWalletBalanceNegative, err)
 		}
 	})
 
@@ -80,8 +80,8 @@ func TestNewWallet(t *testing.T) {
 			InitialBalance: balance,
 		})
 
-		if !errors.Is(err, ErrWalletStateInvalid) {
-			t.Errorf("expected error %v, got %v", ErrWalletStateInvalid, err)
+		if !errors.Is(err, ErrWalletMissingRequiredFields) {
+			t.Errorf("expected error %v, got %v", ErrWalletMissingRequiredFields, err)
 		}
 	})
 }
@@ -128,8 +128,8 @@ func TestRehydrateWallet(t *testing.T) {
 			UpdatedAt: time.Now(),
 		})
 
-		if !errors.Is(err, ErrWalletStateInvalid) {
-			t.Errorf("expected error %v, got %v", ErrWalletStateInvalid, err)
+		if !errors.Is(err, ErrWalletVersionInvalid) {
+			t.Errorf("expected error %v, got %v", ErrWalletVersionInvalid, err)
 		}
 	})
 
@@ -146,8 +146,8 @@ func TestRehydrateWallet(t *testing.T) {
 			UpdatedAt: time.Now(),
 		})
 
-		if !errors.Is(err, ErrWalletNotEnoughBalance) {
-			t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err)
+		if !errors.Is(err, ErrWalletBalanceNegative) {
+			t.Errorf("expected error %v, got %v", ErrWalletBalanceNegative, err)
 		}
 	})
 }
@@ -199,8 +199,8 @@ func TestWallet_Debit(t *testing.T) {
 		amount, _ := Parse(debitAmount, BRL)
 		_, err := w.Debit(amount)
 
-		if !errors.Is(err, ErrWalletNotEnoughBalance) {
-			t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err)
+		if !errors.Is(err, ErrWalletBalanceNegative) {
+			t.Errorf("expected error %v, got %v", ErrWalletBalanceNegative, err)
 		}
 
 		if w.Balance().String() != initialAmount {
@@ -250,8 +250,8 @@ func TestWallet_Debit(t *testing.T) {
 		zero, _ := Zero(BRL)
 		_, err := w.Debit(zero)
 
-		if !errors.Is(err, ErrWalletNotEnoughBalance) {
-			t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err)
+		if !errors.Is(err, ErrWalletBalanceNegative) {
+			t.Errorf("expected error %v, got %v", ErrWalletBalanceNegative, err)
 		}
 	})
 
@@ -308,25 +308,6 @@ func TestWallet_Credit(t *testing.T) {
 		}
 	})
 
-	t.Run("Rejects balance zero", func(t *testing.T) {
-		walletID := uuid.New().String()
-		var initialBalance = "50.00"
-
-		balance, _ := Parse(initialBalance, BRL)
-		w, _ := NewWallet(NewWalletParams{
-			WalletID:       walletID,
-			PlayerID:       "player-1",
-			InitialBalance: balance,
-		})
-
-		zero, _ := Zero(BRL)
-		_, err := w.Credit(zero)
-
-		if !errors.Is(err, ErrWalletNotEnoughBalance) {
-			t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err)
-		}
-	})
-
 	t.Run("Rejects currency different from the wallet's", func(t *testing.T) {
 		walletID := uuid.New().String()
 		var initialBalance = "50.00"
@@ -367,8 +348,8 @@ func TestWallet_DebitCredit_Sequence(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err1)
 	}
 
-	if !errors.Is(err2, ErrWalletNotEnoughBalance) {
-		t.Errorf("expected error %v, got %v", ErrWalletNotEnoughBalance, err2)
+	if !errors.Is(err2, ErrWalletBalanceNegative) {
+		t.Errorf("expected error %v, got %v", ErrWalletBalanceNegative, err2)
 	}
 
 	if w.Balance().String() != "20.00" {

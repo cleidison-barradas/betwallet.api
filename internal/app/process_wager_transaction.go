@@ -70,7 +70,7 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 
 	existing, err := uc.transactionRepo.FindByIdempotencyKey(ctx, cmd.IdempotencyKey)
 	if err != nil && !errors.Is(err, domain.ErrWagerTransactionNotFound) {
-		return nil, fmt.Errorf("process wager transaction: find by idempotency key: %w", err)
+		return nil, fmt.Errorf("failed to find transaction by idempotency key: %w", err)
 	}
 
 	if existing != nil {
@@ -113,7 +113,7 @@ func (uc *ProcessWagerTransaction) Execute(ctx context.Context, cmd ProcessWager
 
 			movement, err := wallet.Debit(cmd.Money)
 			if err != nil {
-				if errors.Is(err, domain.ErrWalletNotEnoughBalance) {
+				if errors.Is(err, domain.ErrWalletBalanceNegative) {
 					return uc.reject(ctx, wagerTx, wallet, "INSUFFICIENT_BALANCE", &result)
 				}
 				return err
@@ -274,7 +274,7 @@ func (uc *ProcessWagerTransaction) publishProcessedEvents(ctx context.Context, w
 
 func (uc *ProcessWagerTransaction) resultFromExisting(ctx context.Context, existing *domain.WagerTransaction) (*ProcessWagerTransactionResult, error) {
 	entry, err := uc.walletLedgerRepo.FindByTransactionID(ctx, existing.ID())
-	if err != nil && !errors.Is(err, ErrWalletLedgerNotFound) {
+	if err != nil && !errors.Is(err, ErrLedgerNotFound) {
 		return nil, fmt.Errorf("process wager transaction: find ledger entry for replay: %w", err)
 	}
 
